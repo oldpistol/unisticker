@@ -5,6 +5,13 @@ import MenuBar from '@/components/MenuBar';
 import { getActiveMenuItems } from '@/utils/navigation';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import Table from '@/components/Table';
+import Pagination from '@/components/Pagination';
+
+interface Column<T> {
+  header: string;
+  accessor: keyof T | ((item: T) => React.ReactNode);
+}
 
 interface ApplicationData {
   id: number;
@@ -23,6 +30,57 @@ export default function Applications() {
     { id: 3, year: 2023, vehicleNo: "GHI 9012", status: "Expired" },
     { id: 4, year: 2024, vehicleNo: "JKL 3456", status: "Rejected" },
   ];
+
+  const columns: Column<ApplicationData>[] = [
+    { header: 'No', accessor: 'id' as keyof ApplicationData },
+    { header: 'Year', accessor: 'year' as keyof ApplicationData },
+    { header: 'Vehicle No', accessor: 'vehicleNo' as keyof ApplicationData },
+    { 
+      header: 'Status', 
+      accessor: (application: ApplicationData) => (
+        <span className={`px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${
+          application.status === "Active" 
+            ? "bg-green-100 text-green-800"
+            : application.status === "Pending"
+            ? "bg-yellow-100 text-yellow-800"
+            : application.status === "Rejected"
+            ? "bg-red-100 text-red-800"
+            : "bg-gray-100 text-gray-800"
+        }`}>
+          {application.status}
+        </span>
+      )
+    },
+    {
+      header: 'Action',
+      accessor: (application: ApplicationData) => (
+        <div className="flex items-center space-x-4">
+          <Link 
+            href={`/applications/${application.id}`} 
+            className="text-indigo-600 hover:text-indigo-900"
+          >
+            View
+          </Link>
+          {application.status !== "Active" && (
+            <>
+              <span className="text-gray-300">|</span>
+              <Link 
+                href={`/applications/${application.id}/edit`} 
+                className="text-indigo-600 hover:text-indigo-900"
+              >
+                Edit
+              </Link>
+            </>
+          )}
+        </div>
+      )
+    }
+  ];
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const totalItems = 50; // This would typically come from your API
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -52,108 +110,15 @@ export default function Applications() {
           </Link>
         </div>
 
-        {/* Table */}
-        <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-          <table className="min-w-full table-auto">
-            <thead className="bg-indigo-500 text-white">
-              <tr>
-                <th className="px-6 py-4 text-left text-sm font-medium uppercase tracking-wider">No</th>
-                <th className="px-6 py-4 text-left text-sm font-medium uppercase tracking-wider">Year</th>
-                <th className="px-6 py-4 text-left text-sm font-medium uppercase tracking-wider">Vehicle No</th>
-                <th className="px-6 py-4 text-left text-sm font-medium uppercase tracking-wider">Status</th>
-                <th className="px-6 py-4 text-left text-sm font-medium uppercase tracking-wider">Action</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {applications.map((application) => (
-                <tr key={application.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">{application.id}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{application.year}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{application.vehicleNo}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${
-                      application.status === "Active" 
-                        ? "bg-green-100 text-green-800"
-                        : application.status === "Pending"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : application.status === "Rejected"
-                        ? "bg-red-100 text-red-800"
-                        : "bg-gray-100 text-gray-800"
-                    }`}>
-                      {application.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <div className="flex items-center space-x-4">
-                      <Link 
-                        href={`/applications/${application.id}`} 
-                        className="text-indigo-600 hover:text-indigo-900"
-                      >
-                        View
-                      </Link>
-                      {application.status !== "Active" && (
-                        <>
-                          <span className="text-gray-300">|</span>
-                          <Link 
-                            href={`/applications/${application.id}/edit`} 
-                            className="text-indigo-600 hover:text-indigo-900"
-                          >
-                            Edit
-                          </Link>
-                        </>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <Table data={applications} columns={columns} />
 
-        {/* Pagination */}
-        <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-4 rounded-lg shadow">
-          <div className="flex-1 flex justify-between sm:hidden">
-            <a href="#" className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-              Previous
-            </a>
-            <a href="#" className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-              Next
-            </a>
-          </div>
-          <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm text-gray-700">
-                Showing <span className="font-medium">1</span> to <span className="font-medium">10</span> of{' '}
-                <span className="font-medium">97</span> results
-              </p>
-            </div>
-            <div>
-              <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                <a href="#" className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                  <span className="sr-only">Previous</span>
-                  <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                    <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                </a>
-                {[1, 2, 3].map((page) => (
-                  <a
-                    key={page}
-                    href="#"
-                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
-                  >
-                    {page}
-                  </a>
-                ))}
-                <a href="#" className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                  <span className="sr-only">Next</span>
-                  <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                  </svg>
-                </a>
-              </nav>
-            </div>
-          </div>
-        </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+        />
       </main>
     </div>
   );

@@ -10,13 +10,21 @@ interface InfoSectionProps {
 
 export default function InfoSection({ title, items }: InfoSectionProps) {
   return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-semibold text-gray-800 pb-2 border-b">{title}</h2>
-      <dl className="space-y-3">
+    <div className="space-y-6">
+      <h2 className="text-xl font-semibold text-gray-900 pb-3 flex items-center">
+        {title}
+      </h2>
+      <dl className="grid gap-6">
         {items.map((item) => (
-          <div key={item.label}>
-            <dt className="text-sm font-medium text-gray-500">{item.label}</dt>
-            <dd className="mt-1 text-sm text-gray-900">{item.value}</dd>
+          <div 
+            key={item.label} 
+            className="group relative pl-4 transition-all duration-200 hover:translate-x-2"
+          >
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-8 bg-gray-100 group-hover:bg-gray-300 transition-colors duration-200 rounded-full" />
+            <dt className="text-sm font-medium text-gray-500 mb-1.5">{item.label}</dt>
+            <dd className="text-base text-gray-900 font-medium tracking-wide">
+              {item.value}
+            </dd>
           </div>
         ))}
       </dl>

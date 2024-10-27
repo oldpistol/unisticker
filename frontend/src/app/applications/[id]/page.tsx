@@ -123,7 +123,7 @@ export default function ApplicationDetails() {
 
           {/* Documents */}
           <div className="p-6">
-            <h2 className="text-lg font-semibold text-gray-800 pb-2 border-b mb-4">Submitted Documents</h2>
+            <h2 className="text-lg font-semibold text-gray-800 pb-5">Submitted Documents</h2>
             <div className="grid md:grid-cols-3 gap-4">
               {Object.entries(application.documents).map(([key, value]) => (
                 <DocumentLink
