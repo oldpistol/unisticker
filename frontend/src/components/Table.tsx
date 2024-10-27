@@ -37,6 +37,6 @@ export default function Table<T>({ data, columns }: TableProps<T>) {
           ))}
         </tbody>
       </table>
-    </div>
+    </div>  
   );
 }
