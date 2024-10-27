@@ -1,0 +1,171 @@
+'use client';
+import { useState, useEffect, useCallback } from 'react';
+import Navbar from '@/components/Navbar';
+import MenuBar from '@/components/MenuBar';
+import { getActiveMenuItems } from '@/utils/navigation';
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
+import { BackButton } from '@/components/BackButton';
+import InputField from '@/components/InputField';
+import FormSection from '@/components/FormSection';
+import SubmitButton from '@/components/SubmitButton';
+import { FileUploadBox } from '@/components/FileUploadBox';
+
+interface FormData {
+  fullName: string;
+  matricNo: string;
+  icNo: string;
+  licenseNo: string;
+  vehicleNo: string;
+  documents: {
+    ic: File | null;
+    matric: File | null;
+    license: File | null;
+  };
+}
+
+const NewApplication = () => {
+  const pathname = usePathname();
+  const [formData, setFormData] = useState<FormData>({
+    fullName: '',
+    matricNo: '',
+    icNo: '',
+    licenseNo: '',
+    vehicleNo: '',
+    documents: {
+      ic: null,
+      matric: null,
+      license: null,
+    },
+  });
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null; // or a loading spinner
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleFileChange = (name: string, file: File) => {
+    setFormData(prev => ({
+      ...prev,
+      documents: {
+        ...prev.documents,
+        [name]: file,
+      },
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log(formData);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-100">
+      <Navbar />
+      <MenuBar items={getActiveMenuItems(pathname)} />
+      
+      <main className="max-w-6xl mx-auto px-4 py-6">
+        <BackButton href="/applications" label="Back to Applications" />
+        
+        <h1 className="text-2xl font-bold text-indigo-800 mb-4">New Sticker Application</h1>
+        
+        <form onSubmit={handleSubmit} className="bg-white shadow-lg rounded-lg p-6">
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Personal Information */}
+            <FormSection title="Personal Information">
+              <InputField
+                id="fullName"
+                name="fullName"
+                label="Full Name"
+                value={formData.fullName}
+                onChange={handleInputChange}
+                required
+              />
+              <InputField
+                id="matricNo"
+                name="matricNo"
+                label="Matric Number"
+                value={formData.matricNo}
+                onChange={handleInputChange}
+                required
+              />
+              <InputField
+                id="icNo"
+                name="icNo"
+                label="IC Number"
+                value={formData.icNo}
+                onChange={handleInputChange}
+                required
+              />
+            </FormSection>
+
+            {/* Vehicle Information */}
+            <FormSection title="Vehicle Information">
+              <InputField
+                id="licenseNo"
+                name="licenseNo"
+                label="License Number"
+                value={formData.licenseNo}
+                onChange={handleInputChange}
+                required
+              />
+              <InputField
+                id="vehicleNo"
+                name="vehicleNo"
+                label="Vehicle Number"
+                value={formData.vehicleNo}
+                onChange={handleInputChange}
+                required
+              />
+            </FormSection>
+          </div>
+
+          {/* Documents Section */}
+          <div className="mt-6">
+            <FormSection title="Required Documents">
+              <div className="grid md:grid-cols-3 gap-4 mt-4">
+                <FileUploadBox
+                  name="ic"
+                  label="IC Card"
+                  onFileChange={handleFileChange}
+                  currentFile={formData.documents.ic}
+                />
+                <FileUploadBox
+                  name="matric"
+                  label="Matric Card"
+                  onFileChange={handleFileChange}
+                  currentFile={formData.documents.matric}
+                />
+                <FileUploadBox
+                  name="license"
+                  label="Driving License"
+                  onFileChange={handleFileChange}
+                  currentFile={formData.documents.license}
+                />
+              </div>
+            </FormSection>
+          </div>
+
+          {/* Submit Button */}
+          <div className="mt-6 flex justify-end">
+            <SubmitButton label="Submit Application" />
+          </div>
+        </form>
+      </main>
+    </div>
+  );
+};
+
+export default NewApplication;
