@@ -1,3 +1,4 @@
+import Providers from '@/components/Providers';
 import type { Metadata } from "next";
 import { Poppins } from 'next/font/google';
 import "./globals.css";
@@ -21,7 +22,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={poppins.className}>
-      <body>{children}</body>
+      <body>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

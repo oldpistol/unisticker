@@ -33,7 +33,7 @@ export default function Applications() {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-indigo-800">My Applications</h1>
           <Link 
-            href="/application/new" 
+            href="/applications/new" 
             className="bg-[#22C55E] hover:bg-[#16A34A] text-white font-semibold text-base py-2 px-4 rounded inline-flex items-center gap-3 shadow-sm transition-colors"
           >
             <svg

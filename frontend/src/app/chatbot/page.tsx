@@ -73,7 +73,7 @@ export default function ChatBot() {
 
       setMessages(prev => [
         ...prev.map(msg => 
-          msg.id === userMessage.id ? { ...msg, status: 'sent' } : msg
+          msg.id === userMessage.id ? { ...msg, status: 'sent' as const } : msg
         ),
         botResponse
       ]);
