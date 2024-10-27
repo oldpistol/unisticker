@@ -12,7 +12,7 @@ interface TableProps<T> {
 
 export default function Table<T>({ data, columns }: TableProps<T>) {
   return (
-    <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+    <div className="bg-white shadow rounded-lg overflow-hidden">
       <table className="min-w-full table-auto">
         <thead className="bg-indigo-500 text-white">
           <tr>
