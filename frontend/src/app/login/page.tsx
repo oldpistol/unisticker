@@ -40,12 +40,20 @@ export default function LoginPage() {
     setIsLoading(true);
     setError('');
     try {
-      router.push('/dashboard');
+      router.push('/applications');
     } catch (err) {
       setError('Invalid email or password');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleGoogleSignIn = () => {
+    router.push('/applications');
+  };
+
+  const handleMicrosoftSignIn = () => {
+    router.push('/applications');
   };
 
   return (
@@ -177,7 +185,8 @@ export default function LoginPage() {
                     </h2>
                     <div className="grid grid-cols-1 gap-3">
                       <button
-                        onClick={() => {}}
+                        type="button"
+                        onClick={handleGoogleSignIn}
                         className="group relative flex justify-center items-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors shadow-none sm:shadow-sm"
                       >
                         <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -190,7 +199,8 @@ export default function LoginPage() {
                       </button>
 
                       <button
-                        onClick={() => {}}
+                        type="button"
+                        onClick={handleMicrosoftSignIn}
                         className="group relative flex justify-center items-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors shadow-none sm:shadow-sm"
                       >
                         <svg className="h-5 w-5" viewBox="0 0 23 23">

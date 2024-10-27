@@ -77,80 +77,84 @@ export default function Profile() {
       <Navbar />
       <MenuBar items={getActiveMenuItems(pathname)} />
       
-      <main className="max-w-6xl mx-auto px-4 py-6">
-        <h1 className="text-2xl font-bold text-indigo-800 mb-4">My Profile</h1>
+      <main className="max-w-4xl mx-auto px-4 py-6">
+        <h1 className="text-2xl font-bold text-gray-800 mb-6">My Profile</h1>
         
         {/* Profile Form */}
-        <form onSubmit={handleSubmit} className="bg-white shadow-lg rounded-lg p-6 mb-6">
-          <div className="grid md:grid-cols-2 gap-6">
+        <form onSubmit={handleSubmit} className="bg-white shadow-lg rounded-lg p-8 mb-8">
+          <div className="grid md:grid-cols-2 gap-8">
             {/* Basic Information */}
             <FormSection title="Basic Information">
-              <InputField
-                id="fullName"
-                name="fullName"
-                label="Full Name"
-                value={profileData.fullName}
-                onChange={handleInputChange}
-                required
-              />
-              <InputField
-                id="email"
-                name="email"
-                label="Email Address"
-                type="email"
-                value={profileData.email}
-                onChange={handleInputChange}
-                required
-              />
-              <InputField
-                id="phoneNo"
-                name="phoneNo"
-                label="Phone Number"
-                value={profileData.phoneNo}
-                onChange={handleInputChange}
-                required
-              />
+              <div className="space-y-4">
+                <InputField
+                  id="fullName"
+                  name="fullName"
+                  label="Full Name"
+                  value={profileData.fullName}
+                  onChange={handleInputChange}
+                  required
+                />
+                <InputField
+                  id="email"
+                  name="email"
+                  label="Email Address"
+                  type="email"
+                  value={profileData.email}
+                  onChange={handleInputChange}
+                  required
+                />
+                <InputField
+                  id="phoneNo"
+                  name="phoneNo"
+                  label="Phone Number"
+                  value={profileData.phoneNo}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
             </FormSection>
 
             {/* Academic Information */}
             <FormSection title="Academic Information">
-              <InputField
-                id="matricNo"
-                name="matricNo"
-                label="Matric Number"
-                value={profileData.matricNo}
-                onChange={handleInputChange}
-                required
-              />
-              <InputField
-                id="faculty"
-                name="faculty"
-                label="Faculty"
-                value={profileData.faculty}
-                onChange={handleInputChange}
-                required
-              />
-              <InputField
-                id="icNo"
-                name="icNo"
-                label="IC Number"
-                value={profileData.icNo}
-                onChange={handleInputChange}
-                required
-              />
+              <div className="space-y-4">
+                <InputField
+                  id="matricNo"
+                  name="matricNo"
+                  label="Matric Number"
+                  value={profileData.matricNo}
+                  onChange={handleInputChange}
+                  required
+                />
+                <InputField
+                  id="faculty"
+                  name="faculty"
+                  label="Faculty"
+                  value={profileData.faculty}
+                  onChange={handleInputChange}
+                  required
+                />
+                <InputField
+                  id="icNo"
+                  name="icNo"
+                  label="IC Number"
+                  value={profileData.icNo}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
             </FormSection>
           </div>
 
           {/* Submit Button */}
-          <div className="mt-6 flex justify-end">
+          <div className="mt-8 flex justify-end">
             <SubmitButton label="Update Profile" />
           </div>
         </form>
 
         {/* Change Password Form */}
-        <form onSubmit={handlePasswordSubmit} className="bg-white shadow-lg rounded-lg p-6">
-          <h2 className="text-xl font-semibold text-indigo-800 mb-4">Change Password</h2>
-          <div className="max-w-md">
+        <form onSubmit={handlePasswordSubmit} className="bg-white shadow-lg rounded-lg p-8">
+          <h2 className="text-xl font-semibold text-gray-800 mb-6">Change Password</h2>
+          <div className="max-w-md space-y-4">
             <FormSection title="Password Details">
               <InputField
                 id="currentPassword"
@@ -182,7 +186,7 @@ export default function Profile() {
             </FormSection>
           </div>
 
-          <div className="mt-6 flex justify-end">
+          <div className="mt-8 flex justify-end">
             <SubmitButton label="Change Password" />
           </div>
         </form>

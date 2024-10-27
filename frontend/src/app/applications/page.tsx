@@ -83,11 +83,11 @@ export default function Applications() {
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="w-full">
       <Navbar />
       <MenuBar items={getActiveMenuItems(pathname)} />
       
-      <main className="max-w-6xl mx-auto px-4 py-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-indigo-800">My Applications</h1>
           <Link 

@@ -111,8 +111,10 @@ export default function EditApplication() {
     return (
       <div className="min-h-screen bg-gray-100">
         <Navbar />
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+          </div>
         </div>
       </div>
     );
@@ -123,7 +125,7 @@ export default function EditApplication() {
       <Navbar />
       <MenuBar items={getActiveMenuItems('/applications')} />
       
-      <main className="max-w-6xl mx-auto px-4 py-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <BackButton href="/applications" label="Back to Applications" />
         
         <h1 className="text-2xl font-bold text-indigo-800 mb-4">Edit Sticker Application</h1>
@@ -188,21 +190,21 @@ export default function EditApplication() {
                   label="IC Card"
                   onFileChange={handleFileChange}
                   currentFile={formData.documents.ic}
-                  existingUrl={documentUrls.ic}
+                  existingUrl={documentUrls.ic ?? undefined}
                 />
                 <FileUploadBox
                   name="matric"
                   label="Matric Card"
                   onFileChange={handleFileChange}
                   currentFile={formData.documents.matric}
-                  existingUrl={documentUrls.matric}
+                  existingUrl={documentUrls.matric ?? undefined}
                 />
                 <FileUploadBox
                   name="license"
                   label="Driving License"
                   onFileChange={handleFileChange}
                   currentFile={formData.documents.license}
-                  existingUrl={documentUrls.license}
+                  existingUrl={documentUrls.license ?? undefined}
                 />
               </div>
             </FormSection>
