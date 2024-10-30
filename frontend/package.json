@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "lineicons": "^1.0.3",
+    "lucide-react": "^0.454.0",
     "next": "15.0.1",
     "next-nprogress-bar": "^2.3.14",
     "react": "19.0.0-rc-69d4b800-20241021",

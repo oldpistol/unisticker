@@ -3,6 +3,12 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { 
+  CircleUserRound, 
+  ChevronDown, 
+  Settings, 
+  LogOut 
+} from 'lucide-react';
 
 export default function AdminNavbar() {
   const router = useRouter();
@@ -25,18 +31,15 @@ export default function AdminNavbar() {
             </Link>
           </div>
 
-          {/* Profile Dropdown */}
+          {/* Updated Profile Dropdown */}
           <div className="relative">
             <button
               onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className="flex items-center space-x-3 focus:outline-none"
+              className="flex items-center space-x-3 focus:outline-none hover:bg-gray-50 rounded-full p-2 transition-colors"
             >
-              <img
-                className="h-8 w-8 rounded-full"
-                src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-                alt=""
-              />
+              <CircleUserRound className="h-8 w-8 text-gray-600" />
               <span className="text-sm font-medium text-gray-700">Admin User</span>
+              <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {isProfileOpen && (
@@ -44,14 +47,16 @@ export default function AdminNavbar() {
                 <div className="py-1">
                   <Link
                     href="/admin/profile"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
+                    <Settings className="h-4 w-4 mr-3 text-gray-500" />
                     Profile Settings
                   </Link>
                   <button
                     onClick={handleSignOut}
-                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
+                    <LogOut className="h-4 w-4 mr-3 text-gray-500" />
                     Sign out
                   </button>
                 </div>
