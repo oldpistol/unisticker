@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Table from '@/components/Table';
 import Pagination from '@/components/Pagination';
+import { Plus, Eye, Edit2 } from 'lucide-react';
 
 interface Column<T> {
   header: string;
@@ -32,20 +33,30 @@ export default function Applications() {
   ];
 
   const columns: Column<ApplicationData>[] = [
-    { header: 'No', accessor: 'id' as keyof ApplicationData },
-    { header: 'Year', accessor: 'year' as keyof ApplicationData },
-    { header: 'Vehicle No', accessor: 'vehicleNo' as keyof ApplicationData },
+    { 
+      header: 'No', 
+      accessor: (application) => (
+        <div className="pl-4">{application.id}</div>
+      )
+    },
+    { 
+      header: 'Year', 
+      accessor: (application) => (
+        <div className="pl-4">{application.year}</div>
+      )
+    },
+    { header: 'Vehicle No', accessor: 'vehicleNo' },
     { 
       header: 'Status', 
       accessor: (application: ApplicationData) => (
-        <span className={`px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${
+        <span className={`px-4 py-1.5 inline-flex text-sm leading-5 font-medium rounded-full ${
           application.status === "Active" 
-            ? "bg-green-100 text-green-800"
+            ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20"
             : application.status === "Pending"
-            ? "bg-yellow-100 text-yellow-800"
+            ? "bg-amber-50 text-amber-700 ring-1 ring-amber-600/20"
             : application.status === "Rejected"
-            ? "bg-red-100 text-red-800"
-            : "bg-gray-100 text-gray-800"
+            ? "bg-rose-50 text-rose-700 ring-1 ring-rose-600/20"
+            : "bg-slate-50 text-slate-700 ring-1 ring-slate-600/20"
         }`}>
           {application.status}
         </span>
@@ -54,23 +65,22 @@ export default function Applications() {
     {
       header: 'Action',
       accessor: (application: ApplicationData) => (
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center gap-2">
           <Link 
             href={`/applications/${application.id}`} 
-            className="text-indigo-600 hover:text-indigo-900"
+            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-700 hover:text-slate-900 rounded-md hover:bg-slate-100 transition-colors"
           >
+            <Eye className="w-4 h-4" />
             View
           </Link>
           {application.status !== "Active" && (
-            <>
-              <span className="text-gray-300">|</span>
-              <Link 
-                href={`/applications/${application.id}/edit`} 
-                className="text-indigo-600 hover:text-indigo-900"
-              >
-                Edit
-              </Link>
-            </>
+            <Link 
+              href={`/applications/${application.id}/edit`} 
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-700 hover:text-slate-900 rounded-md hover:bg-slate-100 transition-colors"
+            >
+              <Edit2 className="w-4 h-4" />
+              Edit
+            </Link>
           )}
         </div>
       )
@@ -83,42 +93,42 @@ export default function Applications() {
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   return (
-    <div className="w-full">
+    <div className="min-h-screen bg-slate-50">
       <Navbar />
       <MenuBar items={getActiveMenuItems(pathname)} />
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-indigo-800">My Applications</h1>
+      <main className="max-w-7xl mx-auto py-8">
+        <div className="p-6 flex justify-between items-center border-b border-slate-200">
+          <div>
+            <h1 className="text-2xl font-semibold text-slate-900">My Applications</h1>
+            <p className="mt-1 text-sm text-slate-500">Manage and track your vehicle permit applications</p>
+          </div>
           <Link 
             href="/applications/new" 
-            className="bg-[#22C55E] hover:bg-[#16A34A] text-white font-semibold text-base py-2 px-4 rounded inline-flex items-center gap-3 shadow-sm transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors"
           >
-            <svg
-              className="w-5 h-5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-            <span>New Application</span>
+            <Plus className="w-5 h-5" />
+            New Application
           </Link>
         </div>
 
-        <Table data={applications} columns={columns} />
+        <div className="p-6">
+          <Table 
+            data={applications} 
+            columns={columns}
+            className="border border-slate-200 rounded-lg overflow-hidden"
+          />
 
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={totalItems}
-          itemsPerPage={itemsPerPage}
-          onPageChange={setCurrentPage}
-        />
+          <div className="mt-6">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+            />
+          </div>
+        </div>
       </main>
     </div>
   );

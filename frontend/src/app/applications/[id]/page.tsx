@@ -63,10 +63,10 @@ export default function ApplicationDetails() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100">
+      <div className="min-h-screen bg-slate-50">
         <Navbar />
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+        <div className="flex justify-center items-center h-[calc(100vh-64px)]">
+          <div className="animate-spin rounded-full h-10 w-10 border-4 border-indigo-600 border-t-transparent" />
         </div>
       </div>
     );
@@ -74,11 +74,13 @@ export default function ApplicationDetails() {
 
   if (!application) {
     return (
-      <div className="min-h-screen bg-gray-100">
+      <div className="min-h-screen bg-slate-50">
         <Navbar />
-        <div className="max-w-6xl mx-auto px-4 py-6">
-          <div className="text-center">
-            <h2 className="text-xl font-semibold text-gray-900">Application not found</h2>
+        <div className="max-w-6xl mx-auto px-4 py-12">
+          <div className="text-center bg-white rounded-lg shadow-sm p-8">
+            <h2 className="text-2xl font-semibold text-gray-900">Application not found</h2>
+            <p className="mt-2 text-gray-600">The requested application could not be found.</p>
+            <BackButton href="/applications" label="Return to Applications" className="mt-6" />
           </div>
         </div>
       </div>
@@ -86,79 +88,89 @@ export default function ApplicationDetails() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-slate-50">
       <Navbar />
       <MenuBar items={getActiveMenuItems('/application')} />
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <BackButton href="/applications" label="Back to Applications" />
-
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-indigo-800">Application Details</h1>
-          <StatusBadge status={application.status} />
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <BackButton 
+          href="/applications" 
+          label="Back to Applications" 
+          className="mb-4 text-indigo-600 hover:text-indigo-700" 
+        />
+        <div className="mb-6 flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-900">Application Details</h1>
+          <StatusBadge status={application.status} className="text-sm px-4 py-2" />
         </div>
 
-        <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-          {/* Application Info */}
-          <div className="p-6 border-b">
-            <div className="grid md:grid-cols-2 gap-6">
-              <InfoSection
-                title="Personal Information"
-                items={[
-                  { label: "Full Name", value: application.fullName },
-                  { label: "Matric Number", value: application.matricNo },
-                  { label: "IC Number", value: application.icNo },
-                ]}
-              />
-              <InfoSection
-                title="Vehicle Information"
-                items={[
-                  { label: "License Number", value: application.licenseNo },
-                  { label: "Vehicle Number", value: application.vehicleNo },
-                ]}
-              />
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Main Content - Left 2 Columns */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Application Info Card */}
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+              <div className="p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-6">Application Information</h2>
+                <div className="grid md:grid-cols-2 gap-8">
+                  <InfoSection
+                    title="Personal Details"
+                    items={[
+                      { label: "Full Name", value: application.fullName },
+                      { label: "Matric Number", value: application.matricNo },
+                      { label: "IC Number", value: application.icNo },
+                    ]}
+                  />
+                  <InfoSection
+                    title="Vehicle Details"
+                    items={[
+                      { label: "License Number", value: application.licenseNo },
+                      { label: "Vehicle Number", value: application.vehicleNo },
+                    ]}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Documents Card */}
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+              <div className="p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-6">Submitted Documents</h2>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {Object.entries(application.documents).map(([key, value]) => (
+                    <DocumentLink
+                      key={key}
+                      label={key.toUpperCase()}
+                      href={value}
+                      className="flex items-center p-4 border rounded-lg hover:bg-slate-50 transition-colors"
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Documents */}
-          <div className="p-6">
-            <h2 className="text-lg font-semibold text-gray-800 pb-5">Submitted Documents</h2>
-            <div className="grid md:grid-cols-3 gap-4">
-              {Object.entries(application.documents).map(([key, value]) => (
-                <DocumentLink
-                  key={key}
-                  label={`${key} Document`}
-                  href={value}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Application Timeline */}
-          <div className="p-6 bg-gray-50">
-            <h2 className="text-lg font-semibold text-gray-800 pb-2 border-b mb-4">Application Timeline</h2>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <div className="flex-shrink-0">
-                  <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
-                    <svg className="h-5 w-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+          {/* Timeline - Right Column */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-xl shadow-sm p-6 sticky top-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-6">Application Timeline</h2>
+              <div className="space-y-6">
+                <div className="relative pl-8 pb-6 border-l-2 border-indigo-200">
+                  <div className="absolute left-[-9px] top-0">
+                    <div className="h-4 w-4 rounded-full bg-indigo-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">Application Submitted</p>
+                    <time className="text-sm text-gray-500">
+                      {new Date(application.submittedAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </time>
                   </div>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Application Submitted</p>
-                  <p className="text-sm text-gray-500">
-                    {new Date(application.submittedAt).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </p>
-                </div>
+                {/* Add more timeline items here as needed */}
               </div>
             </div>
           </div>

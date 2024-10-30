@@ -1,6 +1,7 @@
 interface DocumentLinkProps {
   label: string;
   href: string;
+  className?: string;
 }
 
 export default function DocumentLink({ label, href }: DocumentLinkProps) {

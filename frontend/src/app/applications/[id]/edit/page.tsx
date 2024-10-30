@@ -109,85 +109,103 @@ export default function EditApplication() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100">
+      <div className="min-h-screen bg-gray-50">
         <Navbar />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
-          </div>
+        <div className="flex justify-center items-center h-[calc(100vh-64px)]">
+          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-600" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
       <MenuBar items={getActiveMenuItems('/applications')} />
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <BackButton href="/applications" label="Back to Applications" />
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <BackButton href="/applications" label="Back to Applications" />
+            <h1 className="text-3xl font-bold text-gray-900 mt-2">Edit Vehicle Sticker Application</h1>
+            <p className="text-gray-600 mt-1">Update your application details and documents</p>
+          </div>
+        </div>
         
-        <h1 className="text-2xl font-bold text-indigo-800 mb-4">Edit Sticker Application</h1>
-        
-        <form onSubmit={handleSubmit} className="bg-white shadow-lg rounded-lg p-6">
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Personal Information */}
-            <FormSection title="Personal Information">
-              <InputField
-                id="fullName"
-                name="fullName"
-                label="Full Name"
-                value={formData.fullName}
-                onChange={handleInputChange}
-                required
-              />
-              <InputField
-                id="matricNo"
-                name="matricNo"
-                label="Matric Number"
-                value={formData.matricNo}
-                onChange={handleInputChange}
-                required
-              />
-              <InputField
-                id="icNo"
-                name="icNo"
-                label="IC Number"
-                value={formData.icNo}
-                onChange={handleInputChange}
-                required
-              />
-            </FormSection>
-
-            {/* Vehicle Information */}
-            <FormSection title="Vehicle Information">
-              <InputField
-                id="licenseNo"
-                name="licenseNo"
-                label="License Number"
-                value={formData.licenseNo}
-                onChange={handleInputChange}
-                required
-              />
-              <InputField
-                id="vehicleNo"
-                name="vehicleNo"
-                label="Vehicle Number"
-                value={formData.vehicleNo}
-                onChange={handleInputChange}
-                required
-              />
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Personal Information Card */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <FormSection 
+              title="Personal Information" 
+              description="Your identification details"
+            >
+              <div className="grid md:grid-cols-2 gap-6 mt-4">
+                <InputField
+                  id="fullName"
+                  name="fullName"
+                  label="Full Name"
+                  value={formData.fullName}
+                  onChange={handleInputChange}
+                  required
+                />
+                <InputField
+                  id="matricNo"
+                  name="matricNo"
+                  label="Matric Number"
+                  value={formData.matricNo}
+                  onChange={handleInputChange}
+                  required
+                />
+                <InputField
+                  id="icNo"
+                  name="icNo"
+                  label="IC Number"
+                  value={formData.icNo}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
             </FormSection>
           </div>
 
-          {/* Documents Section */}
-          <div className="mt-6">
-            <FormSection title="Required Documents">
-              <div className="grid md:grid-cols-3 gap-4 mt-4">
+          {/* Vehicle Information Card */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <FormSection 
+              title="Vehicle Information" 
+              description="Your vehicle and license details"
+            >
+              <div className="grid md:grid-cols-2 gap-6 mt-4">
+                <InputField
+                  id="licenseNo"
+                  name="licenseNo"
+                  label="License Number"
+                  value={formData.licenseNo}
+                  onChange={handleInputChange}
+                  required
+                />
+                <InputField
+                  id="vehicleNo"
+                  name="vehicleNo"
+                  label="Vehicle Number"
+                  value={formData.vehicleNo}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+            </FormSection>
+          </div>
+
+          {/* Documents Card */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <FormSection 
+              title="Required Documents" 
+              description="Upload clear, readable copies of your documents"
+            >
+              <div className="grid md:grid-cols-3 gap-6 mt-4">
                 <FileUploadBox
                   name="ic"
                   label="IC Card"
+                  description="Upload a clear copy of your IC"
                   onFileChange={handleFileChange}
                   currentFile={formData.documents.ic}
                   existingUrl={documentUrls.ic ?? undefined}
@@ -195,6 +213,7 @@ export default function EditApplication() {
                 <FileUploadBox
                   name="matric"
                   label="Matric Card"
+                  description="Upload a clear copy of your matric card"
                   onFileChange={handleFileChange}
                   currentFile={formData.documents.matric}
                   existingUrl={documentUrls.matric ?? undefined}
@@ -202,6 +221,7 @@ export default function EditApplication() {
                 <FileUploadBox
                   name="license"
                   label="Driving License"
+                  description="Upload a clear copy of your driving license"
                   onFileChange={handleFileChange}
                   currentFile={formData.documents.license}
                   existingUrl={documentUrls.license ?? undefined}
@@ -211,7 +231,7 @@ export default function EditApplication() {
           </div>
 
           {/* Submit Button */}
-          <div className="mt-6 flex justify-end">
+          <div className="flex justify-end">
             <SubmitButton label="Update Application" />
           </div>
         </form>

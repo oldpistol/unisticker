@@ -8,6 +8,7 @@ interface Column<T> {
 interface TableProps<T> {
   data: T[];
   columns: Column<T>[];
+  className?: string;
 }
 
 export default function Table<T>({ data, columns }: TableProps<T>) {

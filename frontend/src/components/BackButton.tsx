@@ -1,19 +1,21 @@
 import Link from 'next/link';
 
 interface BackButtonProps {
-  href?: string;  // Make href optional by adding ?
-  label?: string; // Make label optional by adding ?
+  href: string;
+  label: string;
+  className?: string;
 }
 
 export const BackButton = ({ 
   href = '/applications',
-  label = 'Back'
+  label = 'Back',
+  className = ''
 }: BackButtonProps) => {
   return (
     <div className="mb-4">
       <Link 
         href={href}
-        className="inline-flex items-center text-sm text-indigo-600 hover:text-indigo-800"
+        className={`inline-flex items-center text-sm text-indigo-600 hover:text-indigo-800 ${className}`}
       >
         <svg 
           className="w-4 h-4 mr-1" 

@@ -1,5 +1,6 @@
 interface StatusBadgeProps {
   status: 'pending' | 'approved' | 'rejected';
+  className?: string;
 }
 
 export default function StatusBadge({ status }: StatusBadgeProps) {

@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
 
 interface FileUploadProps {
-  name: 'ic' | 'matric' | 'license';
+  name: string;
   label: string;
+  description: string;
   onFileChange: (name: string, file: File) => void;
   currentFile: File | null;
   existingUrl?: string;
 }
 
-export const FileUploadBox = ({ name, label, onFileChange, currentFile, existingUrl }: FileUploadProps) => {
+export const FileUploadBox = ({ name, label, description, onFileChange, currentFile, existingUrl }: FileUploadProps) => {
   const [error, setError] = useState<string>('');
   const [preview, setPreview] = useState<string | null>(existingUrl || null);
 

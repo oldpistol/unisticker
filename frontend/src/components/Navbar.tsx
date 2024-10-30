@@ -1,6 +1,7 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { User } from 'lucide-react';
 
 interface NavbarProps {
   userName?: string;
@@ -41,33 +42,25 @@ export default function Navbar({ userName }: NavbarProps) {
           <div className="relative" ref={dropdownRef}>
             <button 
               onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className="inline-flex items-center justify-center rounded-lg border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors shadow-none sm:shadow-sm"
+              className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
             >
-              <span className="mr-2">{userName || 'Account'}</span>
-              <svg 
-                className="w-5 h-5"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path 
-                  fillRule="evenodd"
-                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                  clipRule="evenodd"
-                />
-              </svg>
+              <User className="w-5 h-5 text-indigo-600" />
             </button>
             
             {isProfileOpen && (
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg border border-gray-200 shadow-lg">
+                <div className="px-4 py-3 border-b border-gray-200">
+                  <p className="text-sm font-medium text-gray-900">{userName || 'Guest'}</p>
+                </div>
                 <Link 
                   href="/profile"
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-t-lg"
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                 >
                   Profile
                 </Link>
                 <Link 
                   href="/login"
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-b-lg"
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                 >
                   Sign out
                 </Link>
