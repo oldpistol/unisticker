@@ -1,13 +1,15 @@
+import { LayoutGrid as GridAltIcon, MessageSquare as CommentsIcon } from 'lucide-react';
+
 export const menuItems = [
   {
     href: "/applications",
-    icon: "lni-grid-alt",
+    icon: GridAltIcon,
     label: "Applications",
     isActive: true
   },
   {
     href: "/chatbot",
-    icon: "lni-comments",
+    icon: CommentsIcon,
     label: "ChatBot",
     isActive: false
   }
