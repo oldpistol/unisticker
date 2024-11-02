@@ -19,10 +19,13 @@ UniSticker is a web application designed to modernize the vehicle sticker applic
 ## Prerequisites 📋
 
 Before you begin, ensure you have the following installed:
-- Docker and Docker Compose
+- PHP 8.2 or higher
+- Composer
+- Node.js (v18 or higher)
+- npm
+- MySQL 8.0
+- Apache/Nginx web server
 - Git
-- Node.js and npm (for local development)
-- Composer (for local development)
 
 ## Installation Steps 🚀
 
@@ -32,54 +35,53 @@ git clone https://github.com/yourusername/unisticker.git
 cd unisticker
 ```
 
-### 2. Environment Setup
+### 2. Backend Setup
 
-#### Frontend Setup
 ```bash
-cd frontend
-cp .env.example .env.local
-```
-
-Update the `.env.local` file with your configuration:
-```env
-NEXT_PUBLIC_API_URL=http://localhost:8000/api
-```
-
-#### Backend Setup
-```bash
+# Navigate to backend directory
 cd backend
+
+# Install PHP dependencies
+composer install
+
+# Create environment file
 cp .env.example .env
-```
-
-Update the `.env` file with your configuration:
-```env
-DB_CONNECTION=mysql
-DB_HOST=db
-DB_PORT=3306
-DB_DATABASE=laravel
-DB_USERNAME=laravel_user
-DB_PASSWORD=your_password
-```
-
-### 3. Docker Setup and Installation
-
-From the root directory of the project:
-
-```bash
-# Build and start the containers
-docker-compose up --build -d
-
-# Install backend dependencies
-docker-compose exec backend composer install
 
 # Generate application key
-docker-compose exec backend php artisan key:generate
+php artisan key:generate
 
-# Run database migrations
-docker-compose exec backend php artisan migrate
+# Configure your database in .env file
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=unisticker
+DB_USERNAME=your_username
+DB_PASSWORD=your_password
 
-# Install frontend dependencies
-docker-compose exec frontend npm install
+# Run migrations
+php artisan migrate
+
+# Start Laravel development server
+php artisan serve
+```
+
+### 3. Frontend Setup
+
+```bash
+# Navigate to frontend directory
+cd frontend
+
+# Install dependencies
+npm install
+
+# Create environment file
+cp .env.example .env.local
+
+# Update API URL in .env.local
+NEXT_PUBLIC_API_URL=http://localhost:8000/api
+
+# Start development server
+npm run dev
 ```
 
 ### 4. Accessing the Application
@@ -87,35 +89,52 @@ docker-compose exec frontend npm install
 After the installation is complete, you can access:
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:8000/api
-- Database: localhost:3306
 
 ## Development 👩‍💻👨‍💻
 
 ### Running Tests
-```bash
-# Backend tests
-docker-compose exec backend php artisan test
 
-# Frontend tests
-docker-compose exec frontend npm test
+```bash
+# Backend tests (in backend directory)
+php artisan test
+
+# Frontend tests (in frontend directory)
+npm test
 ```
 
 ### Common Commands
 
+#### Backend Commands
 ```bash
-# Start the containers
-docker-compose up -d
+# Start Laravel server
+php artisan serve
 
-# Stop the containers
-docker-compose down
+# Create new migration
+php artisan make:migration create_table_name
 
-# View logs
-docker-compose logs -f
+# Run migrations
+php artisan migrate
 
-# Access container shells
-docker-compose exec frontend sh
-docker-compose exec backend bash
-docker-compose exec db mysql -u laravel_user -p
+# Rollback migrations
+php artisan migrate:rollback
+
+# Create new controller
+php artisan make:controller ControllerName
+```
+
+#### Frontend Commands
+```bash
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Start production server
+npm start
+
+# Run linter
+npm run lint
 ```
 
 ## Project Structure 📁
@@ -126,12 +145,11 @@ unisticker/
 │   ├── src/
 │   ├── public/
 │   └── ...
-├── backend/                 # Laravel backend application
-│   ├── app/
-│   ├── database/
-│   ├── routes/
-│   └── ...
-└── docker-compose.yml      # Docker composition file
+└── backend/                 # Laravel backend application
+    ├── app/
+    ├── database/
+    ├── routes/
+    └── ...
 ```
 
 ## Support 💬
