@@ -197,6 +197,8 @@ export default function EditApplication() {
                   name="fullName"
                   value={formData.fullName}
                   onChange={handleInputChange}
+                  spellCheck="false"
+                  data-ms-editor="false"
                   className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 />
               </div>
@@ -207,6 +209,8 @@ export default function EditApplication() {
                   name="matricNo"
                   value={formData.matricNo}
                   onChange={handleInputChange}
+                  spellCheck="false"
+                  data-ms-editor="false"
                   className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 />
               </div>
@@ -217,6 +221,8 @@ export default function EditApplication() {
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
+                  spellCheck="false"
+                  data-ms-editor="false"
                   className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 />
               </div>
@@ -227,6 +233,8 @@ export default function EditApplication() {
                   name="phoneNumber"
                   value={formData.phoneNumber}
                   onChange={handleInputChange}
+                  spellCheck="false"
+                  data-ms-editor="false"
                   className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 />
               </div>
@@ -237,6 +245,8 @@ export default function EditApplication() {
                   name="faculty"
                   value={formData.faculty}
                   onChange={handleInputChange}
+                  spellCheck="false"
+                  data-ms-editor="false"
                   className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 />
               </div>
@@ -247,6 +257,8 @@ export default function EditApplication() {
                   name="address"
                   value={formData.address}
                   onChange={handleInputChange}
+                  spellCheck="false"
+                  data-ms-editor="false"
                   className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 />
               </div>
@@ -267,6 +279,8 @@ export default function EditApplication() {
                   name="vehicleNo"
                   value={formData.vehicleNo}
                   onChange={handleInputChange}
+                  spellCheck="false"
+                  data-ms-editor="false"
                   className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 />
               </div>
@@ -277,6 +291,8 @@ export default function EditApplication() {
                   name="vehicleType"
                   value={formData.vehicleType}
                   onChange={handleInputChange}
+                  spellCheck="false"
+                  data-ms-editor="false"
                   className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 />
               </div>
@@ -287,6 +303,8 @@ export default function EditApplication() {
                   name="vehicleBrand"
                   value={formData.vehicleBrand}
                   onChange={handleInputChange}
+                  spellCheck="false"
+                  data-ms-editor="false"
                   className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 />
               </div>
@@ -297,6 +315,8 @@ export default function EditApplication() {
                   name="vehicleModel"
                   value={formData.vehicleModel}
                   onChange={handleInputChange}
+                  spellCheck="false"
+                  data-ms-editor="false"
                   className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 />
               </div>
@@ -307,6 +327,8 @@ export default function EditApplication() {
                   name="vehicleColor"
                   value={formData.vehicleColor}
                   onChange={handleInputChange}
+                  spellCheck="false"
+                  data-ms-editor="false"
                   className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 />
               </div>
