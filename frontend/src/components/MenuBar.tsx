@@ -17,10 +17,10 @@ interface MenuBarProps {
 
 const defaultItems: MenuItem[] = [
   {
-    href: "/",
+    href: "/applications",
     icon: LayoutGrid,
     label: "Applications",
-    isActive: true
+    isActive: false
   },
   {
     href: "/chatbot",

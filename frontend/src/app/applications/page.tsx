@@ -105,7 +105,7 @@ export default function Applications() {
           </div>
           <Link 
             href="/applications/new" 
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
           >
             <Plus className="w-5 h-5" />
             New Application

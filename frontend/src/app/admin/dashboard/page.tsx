@@ -46,12 +46,12 @@ export default function AdminDashboard() {
     { 
       header: 'Status', 
       accessor: (application: RecentApplication) => (
-        <span className={`px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${
+        <span className={`px-4 py-1.5 inline-flex text-sm font-medium rounded-full ${
           application.status === "Approved" 
-            ? "bg-green-100 text-green-800"
+            ? "bg-green-50 text-green-700 border border-green-100"
             : application.status === "Pending"
-            ? "bg-yellow-100 text-yellow-800"
-            : "bg-red-100 text-red-800"
+            ? "bg-yellow-50 text-yellow-700 border border-yellow-100"
+            : "bg-red-50 text-red-700 border border-red-100"
         }`}>
           {application.status}
         </span>
@@ -60,10 +60,10 @@ export default function AdminDashboard() {
     {
       header: 'Action',
       accessor: (application: RecentApplication) => (
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3">
           <Link 
             href={`/admin/applications/${application.id}`} 
-            className="text-indigo-600 hover:text-indigo-900"
+            className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-md text-sm font-medium hover:bg-indigo-100 transition-colors duration-200"
           >
             Review
           </Link>
