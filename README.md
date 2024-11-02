@@ -140,4 +140,9 @@ If you have any questions or issues, please contact oldpistol@gmail.com.
 
 ---
 
-Made with ❤️ by [Muhammad Hafiz Bin Mohd Zainal Abidin]
+Made with ❤️ by:
+- Muhammad Hafizuddin Shah Bin Abdul Rahman Shah
+- Ismail bin Aman 
+- Mohamad Fuaezzin Zaini
+- Mohammed Satippiddin Safid b Hamzah
+- Mohamad Azmi Bin Anduwar
