@@ -1,0 +1,68 @@
+# Dependencies
+/frontend/node_modules
+/backend/vendor
+/frontend/.pnp
+/frontend/.pnp.js
+
+# Testing
+/frontend/coverage
+/backend/.phpunit.result.cache
+
+# Environment files
+/frontend/.env
+/frontend/.env.local
+/frontend/.env.development.local
+/frontend/.env.test.local
+/frontend/.env.production.local
+/backend/.env
+/backend/.env.backup
+
+# Logs
+/frontend/npm-debug.log*
+/frontend/yarn-debug.log*
+/frontend/yarn-error.log*
+/backend/storage/logs/*
+
+# Build outputs
+/frontend/.next
+/frontend/out
+/frontend/build
+/frontend/dist
+/backend/public/hot
+/backend/public/storage
+/backend/storage/*.key
+/backend/public/build
+/backend/public/mix-manifest.json
+/backend/public/css
+/backend/public/js
+
+# Laravel specific
+/backend/bootstrap/cache/*
+/backend/storage/framework/cache/*
+/backend/storage/framework/sessions/*
+/backend/storage/framework/views/*
+/backend/storage/app/*
+
+# Next.js specific
+/frontend/.vercel
+/frontend/next-env.d.ts
+
+# IDE and Editor files
+.idea
+.vscode
+*.sublime-workspace
+*.sublime-project
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
+
+# Database
+/backend/*.sqlite
+/backend/*.sqlite3
+
+# Package manager files (optional - you might want to keep these)
+/frontend/yarn.lock
+/frontend/package-lock.json
+/backend/composer.lock
