@@ -14,7 +14,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import InputField from '@/components/InputField';
-import { FileUploadBox } from '@/components/FileUploadBox';
+import FileUploadBox from '@/components/FileUploadBox';
 
 interface FormData {
   fullName: string;

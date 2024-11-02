@@ -1,176 +1,262 @@
 'use client';
+
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter, usePathname } from 'next/navigation';
 import Navbar from '@/components/Navbar';
+import Link from 'next/link';
+import { 
+  ArrowLeft,
+  User,
+  Car,
+  Calendar,
+  GraduationCap,
+  Phone,
+  Mail,
+  MapPin,
+  FileText,
+  Clock
+} from 'lucide-react';
 import MenuBar from '@/components/MenuBar';
-import { BackButton } from '@/components/BackButton';
-import StatusBadge from '@/components/StatusBadge';
-import InfoSection from '@/components/InfoSection';
-import DocumentLink from '@/components/DocumentLink';
 import { getActiveMenuItems } from '@/utils/navigation';
 
-interface ApplicationDetails {
-  id: string;
-  status: 'pending' | 'approved' | 'rejected';
-  submittedAt: string;
-  fullName: string;
-  matricNo: string;
-  icNo: string;
-  licenseNo: string;
+// Use the same ApplicationDetail interface from admin module
+interface ApplicationDetail {
+  studentName: string;
+  studentId: string;
+  email: string;
+  phoneNumber: string;
+  faculty: string;
+  address: string;
   vehicleNo: string;
-  documents: {
-    ic: string;
-    matric: string;
-    license: string;
-  };
+  vehicleType: string;
+  vehicleBrand: string;
+  vehicleModel: string;
+  vehicleColor: string;
+  status: string;
+  documents: Array<{ type: string; url: string }>;
+  timeline: Array<{ status: string; date: string; comment?: string }>;
 }
 
-export default function ApplicationDetails() {
-  const { id } = useParams();
-  const [application, setApplication] = useState<ApplicationDetails | null>(null);
-  const [loading, setLoading] = useState(true);
+export default function ApplicationDetail() {
+  const router = useRouter();
+  const params = useParams();
+  const pathname = usePathname();
+  const [application, setApplication] = useState<ApplicationDetail | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // TODO: Replace with actual API call
-    const fetchApplicationDetails = async () => {
+    // Fetch application details
+    const fetchApplication = async () => {
       try {
-        // Mock data for now
-        const mockData: ApplicationDetails = {
-          id: id as string,
-          status: 'pending',
-          submittedAt: new Date().toISOString(),
-          fullName: 'John Doe',
-          matricNo: 'A123456',
-          icNo: '990101-01-1234',
-          licenseNo: 'D123456',
-          vehicleNo: 'ABC 1234',
-          documents: {
-            ic: '/mock/ic.pdf',
-            matric: '/mock/matric.pdf',
-            license: '/mock/license.pdf',
-          },
+        // Using dummy data for development
+        const dummyData = {
+          studentName: "John Doe",
+          studentId: "A123456",
+          email: "john.doe@example.com",
+          phoneNumber: "+60123456789",
+          faculty: "Faculty of Engineering",
+          address: "123 Student Housing, University Road",
+          vehicleNo: "ABC 1234",
+          vehicleType: "Car",
+          vehicleBrand: "Toyota",
+          vehicleModel: "Corolla",
+          vehicleColor: "Silver",
+          status: "Pending",
+          documents: [
+            { type: "Student ID", url: "/dummy/student-id.pdf" },
+            { type: "License", url: "/dummy/license.pdf" }
+          ],
+          timeline: [
+            { status: "Submitted", date: "2024-01-15", comment: "Application received" }
+          ]
         };
-        setApplication(mockData);
+        setApplication(dummyData);
       } catch (error) {
         console.error('Error fetching application:', error);
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
-    fetchApplicationDetails();
-  }, [id]);
+    fetchApplication();
+  }, [params.id]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50">
-        <Navbar />
-        <div className="flex justify-center items-center h-[calc(100vh-64px)]">
-          <div className="animate-spin rounded-full h-10 w-10 border-4 border-indigo-600 border-t-transparent" />
-        </div>
-      </div>
-    );
+  if (isLoading) {
+    return <div>Loading...</div>;
   }
 
   if (!application) {
-    return (
-      <div className="min-h-screen bg-slate-50">
-        <Navbar />
-        <div className="max-w-6xl mx-auto px-4 py-12">
-          <div className="text-center bg-white rounded-lg shadow-sm p-8">
-            <h2 className="text-2xl font-semibold text-gray-900">Application not found</h2>
-            <p className="mt-2 text-gray-600">The requested application could not be found.</p>
-            <BackButton href="/applications" label="Return to Applications" className="mt-6" />
-          </div>
-        </div>
-      </div>
-    );
+    return <div>Application not found</div>;
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-gray-50/30">
       <Navbar />
-      <MenuBar items={getActiveMenuItems('/application')} />
+      <MenuBar items={getActiveMenuItems(pathname)} />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <BackButton 
-          href="/applications" 
-          label="Back to Applications" 
-          className="mb-4 text-indigo-600 hover:text-indigo-700" 
-        />
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">Application Details</h1>
-          <StatusBadge status={application.status} className="text-sm px-4 py-2" />
+        {/* Header Section */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Link
+                href="/applications"
+                className="mr-4 p-2 text-gray-400 hover:text-gray-500"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Link>
+              <div>
+                <h1 className="text-2xl font-semibold text-gray-900">
+                  Application Details
+                </h1>
+                <p className="mt-1 text-sm text-gray-500">
+                  View your vehicle sticker application details
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Main Content - Left 2 Columns */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Application Info Card */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div className="p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-6">Application Information</h2>
-                <div className="grid md:grid-cols-2 gap-8">
-                  <InfoSection
-                    title="Personal Details"
-                    items={[
-                      { label: "Full Name", value: application.fullName },
-                      { label: "Matric Number", value: application.matricNo },
-                      { label: "IC Number", value: application.icNo },
-                    ]}
-                  />
-                  <InfoSection
-                    title="Vehicle Details"
-                    items={[
-                      { label: "License Number", value: application.licenseNo },
-                      { label: "Vehicle Number", value: application.vehicleNo },
-                    ]}
-                  />
+        <div className="grid grid-cols-3 gap-6">
+          {/* Main Content */}
+          <div className="col-span-2 space-y-6">
+            {/* Personal Information */}
+            <div className="bg-white shadow-sm rounded-lg p-6">
+              <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                <User className="w-5 h-5 mr-2 text-gray-400" />
+                Personal Information
+              </h2>
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <p className="text-sm text-gray-500">Full Name</p>
+                  <p className="mt-1 text-sm font-medium text-gray-900">{application.studentName}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Matric Number</p>
+                  <p className="mt-1 text-sm font-medium text-gray-900">{application.studentId}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Email</p>
+                  <p className="mt-1 text-sm font-medium text-gray-900">{application.email}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Phone Number</p>
+                  <p className="mt-1 text-sm font-medium text-gray-900">{application.phoneNumber}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Faculty</p>
+                  <p className="mt-1 text-sm font-medium text-gray-900">{application.faculty}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Address</p>
+                  <p className="mt-1 text-sm font-medium text-gray-900">{application.address}</p>
                 </div>
               </div>
             </div>
 
-            {/* Documents Card */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div className="p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-6">Submitted Documents</h2>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {Object.entries(application.documents).map(([key, value]) => (
-                    <DocumentLink
-                      key={key}
-                      label={key.toUpperCase()}
-                      href={value}
-                      className="flex items-center p-4 border rounded-lg hover:bg-slate-50 transition-colors"
-                    />
-                  ))}
+            {/* Vehicle Information */}
+            <div className="bg-white shadow-sm rounded-lg p-6">
+              <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                <Car className="w-5 h-5 mr-2 text-gray-400" />
+                Vehicle Information
+              </h2>
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <p className="text-sm text-gray-500">Vehicle Number</p>
+                  <p className="mt-1 text-sm font-medium text-gray-900">{application.vehicleNo}</p>
                 </div>
+                <div>
+                  <p className="text-sm text-gray-500">Vehicle Type</p>
+                  <p className="mt-1 text-sm font-medium text-gray-900">{application.vehicleType}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Brand</p>
+                  <p className="mt-1 text-sm font-medium text-gray-900">{application.vehicleBrand}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Model</p>
+                  <p className="mt-1 text-sm font-medium text-gray-900">{application.vehicleModel}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Color</p>
+                  <p className="mt-1 text-sm font-medium text-gray-900">{application.vehicleColor}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Documents */}
+            <div className="bg-white shadow-sm rounded-lg p-6">
+              <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                <FileText className="w-5 h-5 mr-2 text-gray-400" />
+                Documents
+              </h2>
+              <div className="space-y-4">
+                {application.documents.map((doc, index) => (
+                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <span className="text-sm font-medium text-gray-900">{doc.type}</span>
+                    <a
+                      href={doc.url}
+                      className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      View Document
+                    </a>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
 
-          {/* Timeline - Right Column */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-sm p-6 sticky top-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-6">Application Timeline</h2>
-              <div className="space-y-6">
-                <div className="relative pl-8 pb-6 border-l-2 border-indigo-200">
-                  <div className="absolute left-[-9px] top-0">
-                    <div className="h-4 w-4 rounded-full bg-indigo-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">Application Submitted</p>
-                    <time className="text-sm text-gray-500">
-                      {new Date(application.submittedAt).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </time>
-                  </div>
-                </div>
-                {/* Add more timeline items here as needed */}
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Status Card */}
+            <div className="bg-white shadow-sm rounded-lg p-6">
+              <h2 className="text-lg font-medium text-gray-900 mb-4">Application Status</h2>
+              <span className={`px-3 py-1 inline-flex text-sm font-medium rounded-full ${
+                application.status === "Approved" 
+                  ? "bg-green-50 text-green-700 ring-1 ring-green-600/20"
+                  : application.status === "Pending"
+                  ? "bg-yellow-50 text-yellow-700 ring-1 ring-yellow-600/20"
+                  : "bg-red-50 text-red-700 ring-1 ring-red-600/20"
+              }`}>
+                {application.status}
+              </span>
+            </div>
+
+            {/* Timeline */}
+            <div className="bg-white shadow-sm rounded-lg p-6">
+              <h2 className="text-lg font-medium text-gray-900 mb-4">Timeline</h2>
+              <div className="flow-root">
+                <ul role="list" className="-mb-8">
+                  {application.timeline.map((event, eventIdx) => (
+                    <li key={eventIdx}>
+                      <div className="relative pb-8">
+                        {eventIdx !== application.timeline.length - 1 ? (
+                          <span className="absolute left-4 top-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true" />
+                        ) : null}
+                        <div className="relative flex space-x-3">
+                          <div>
+                            <span className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center ring-8 ring-white">
+                              <Clock className="h-5 w-5 text-gray-500" />
+                            </span>
+                          </div>
+                          <div className="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
+                            <div>
+                              <p className="text-sm text-gray-500">{event.status}</p>
+                              {event.comment && (
+                                <p className="mt-1 text-sm text-gray-700">{event.comment}</p>
+                              )}
+                            </div>
+                            <div className="whitespace-nowrap text-right text-sm text-gray-500">
+                              {new Date(event.date).toLocaleDateString()}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
           </div>

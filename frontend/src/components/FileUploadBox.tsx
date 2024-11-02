@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-interface FileUploadProps {
+interface FileUploadBoxProps {
   name: string;
   label: string;
   description: string;
@@ -9,7 +9,7 @@ interface FileUploadProps {
   existingUrl?: string;
 }
 
-export const FileUploadBox = ({ name, label, description, onFileChange, currentFile, existingUrl }: FileUploadProps) => {
+export default function FileUploadBox({ name, label, description, onFileChange, currentFile, existingUrl }: FileUploadBoxProps) {
   const [error, setError] = useState<string>('');
   const [preview, setPreview] = useState<string | null>(existingUrl || null);
 
@@ -114,4 +114,4 @@ export const FileUploadBox = ({ name, label, description, onFileChange, currentF
       </div>
     </div>
   );
-};
+}

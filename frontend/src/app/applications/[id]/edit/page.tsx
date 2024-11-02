@@ -1,11 +1,19 @@
 'use client';
+
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import MenuBar from '@/components/MenuBar';
 import { getActiveMenuItems } from '@/utils/navigation';
-import { BackButton, InputField, FormSection, SubmitButton } from '@/components';
-import { FileUploadBox } from '@/components/FileUploadBox';
+import Link from 'next/link';
+import { 
+  ArrowLeft,
+  User,
+  Car,
+  FileText,
+  AlertCircle
+} from 'lucide-react';
+import FileUploadBox from '@/components/FileUploadBox';
 
 interface FormData {
   fullName: string;
@@ -27,7 +35,8 @@ interface DocumentUrls {
 }
 
 export default function EditApplication() {
-  const { id } = useParams();
+  const router = useRouter();
+  const params = useParams();
   const [formData, setFormData] = useState<FormData>({
     fullName: '',
     matricNo: '',
@@ -82,7 +91,7 @@ export default function EditApplication() {
     };
 
     fetchApplication();
-  }, [id]);
+  }, [params.id]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -109,7 +118,7 @@ export default function EditApplication() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50/30">
         <Navbar />
         <div className="flex justify-center items-center h-[calc(100vh-64px)]">
           <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-600" />
@@ -119,122 +128,149 @@ export default function EditApplication() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50/30">
       <Navbar />
       <MenuBar items={getActiveMenuItems('/applications')} />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <BackButton href="/applications" label="Back to Applications" />
-            <h1 className="text-3xl font-bold text-gray-900 mt-2">Edit Vehicle Sticker Application</h1>
-            <p className="text-gray-600 mt-1">Update your application details and documents</p>
+        {/* Header Section */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Link
+                href={`/applications/${params.id}`}
+                className="mr-4 p-2 text-gray-400 hover:text-gray-500"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Link>
+              <div>
+                <h1 className="text-2xl font-semibold text-gray-900">
+                  Edit Application
+                </h1>
+                <p className="mt-1 text-sm text-gray-500">
+                  Update your vehicle sticker application details
+                </p>
+              </div>
+            </div>
           </div>
         </div>
-        
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Personal Information Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <FormSection 
-              title="Personal Information" 
-              description="Your identification details"
-            >
-              <div className="grid md:grid-cols-2 gap-6 mt-4">
-                <InputField
-                  id="fullName"
+
+        <div className="space-y-6">
+          {/* Personal Information */}
+          <div className="bg-white shadow-sm rounded-lg p-6">
+            <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+              <User className="w-5 h-5 mr-2 text-gray-400" />
+              Personal Information
+            </h2>
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Full Name</label>
+                <input
+                  type="text"
                   name="fullName"
-                  label="Full Name"
                   value={formData.fullName}
                   onChange={handleInputChange}
-                  required
+                  className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 />
-                <InputField
-                  id="matricNo"
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Matric Number</label>
+                <input
+                  type="text"
                   name="matricNo"
-                  label="Matric Number"
                   value={formData.matricNo}
                   onChange={handleInputChange}
-                  required
+                  className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 />
-                <InputField
-                  id="icNo"
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">IC Number</label>
+                <input
+                  type="text"
                   name="icNo"
-                  label="IC Number"
                   value={formData.icNo}
                   onChange={handleInputChange}
-                  required
+                  className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 />
               </div>
-            </FormSection>
+            </div>
           </div>
 
-          {/* Vehicle Information Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <FormSection 
-              title="Vehicle Information" 
-              description="Your vehicle and license details"
-            >
-              <div className="grid md:grid-cols-2 gap-6 mt-4">
-                <InputField
-                  id="licenseNo"
+          {/* Vehicle Information */}
+          <div className="bg-white shadow-sm rounded-lg p-6">
+            <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+              <Car className="w-5 h-5 mr-2 text-gray-400" />
+              Vehicle Information
+            </h2>
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">License Number</label>
+                <input
+                  type="text"
                   name="licenseNo"
-                  label="License Number"
                   value={formData.licenseNo}
                   onChange={handleInputChange}
-                  required
+                  className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 />
-                <InputField
-                  id="vehicleNo"
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Vehicle Number</label>
+                <input
+                  type="text"
                   name="vehicleNo"
-                  label="Vehicle Number"
                   value={formData.vehicleNo}
                   onChange={handleInputChange}
-                  required
+                  className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 />
               </div>
-            </FormSection>
+            </div>
           </div>
 
-          {/* Documents Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <FormSection 
-              title="Required Documents" 
-              description="Upload clear, readable copies of your documents"
-            >
-              <div className="grid md:grid-cols-3 gap-6 mt-4">
-                <FileUploadBox
-                  name="ic"
-                  label="IC Card"
-                  description="Upload a clear copy of your IC"
-                  onFileChange={handleFileChange}
-                  currentFile={formData.documents.ic}
-                  existingUrl={documentUrls.ic ?? undefined}
-                />
-                <FileUploadBox
-                  name="matric"
-                  label="Matric Card"
-                  description="Upload a clear copy of your matric card"
-                  onFileChange={handleFileChange}
-                  currentFile={formData.documents.matric}
-                  existingUrl={documentUrls.matric ?? undefined}
-                />
-                <FileUploadBox
-                  name="license"
-                  label="Driving License"
-                  description="Upload a clear copy of your driving license"
-                  onFileChange={handleFileChange}
-                  currentFile={formData.documents.license}
-                  existingUrl={documentUrls.license ?? undefined}
-                />
-              </div>
-            </FormSection>
+          {/* Documents */}
+          <div className="bg-white shadow-sm rounded-lg p-6">
+            <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+              <FileText className="w-5 h-5 mr-2 text-gray-400" />
+              Required Documents
+            </h2>
+            <div className="grid grid-cols-3 gap-6">
+              <FileUploadBox
+                name="ic"
+                label="IC Card"
+                description="Upload a clear copy of your IC"
+                onFileChange={handleFileChange}
+                currentFile={formData.documents.ic}
+                existingUrl={documentUrls.ic ?? undefined}
+              />
+              <FileUploadBox
+                name="matric"
+                label="Matric Card"
+                description="Upload a clear copy of your matric card"
+                onFileChange={handleFileChange}
+                currentFile={formData.documents.matric}
+                existingUrl={documentUrls.matric ?? undefined}
+              />
+              <FileUploadBox
+                name="license"
+                label="Driving License"
+                description="Upload a clear copy of your driving license"
+                onFileChange={handleFileChange}
+                currentFile={formData.documents.license}
+                existingUrl={documentUrls.license ?? undefined}
+              />
+            </div>
           </div>
 
           {/* Submit Button */}
           <div className="flex justify-end">
-            <SubmitButton label="Update Application" />
+            <button
+              type="submit"
+              onClick={handleSubmit}
+              className="px-6 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Update Application
+            </button>
           </div>
-        </form>
+        </div>
       </main>
     </div>
   );
