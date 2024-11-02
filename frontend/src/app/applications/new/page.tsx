@@ -19,9 +19,15 @@ import FileUploadBox from '@/components/FileUploadBox';
 interface FormData {
   fullName: string;
   matricNo: string;
-  icNo: string;
-  licenseNo: string;
+  email: string;
+  phoneNumber: string;
+  faculty: string;
+  address: string;
   vehicleNo: string;
+  vehicleType: string;
+  vehicleBrand: string;
+  vehicleModel: string;
+  vehicleColor: string;
   documents: {
     ic: File | null;
     matric: File | null;
@@ -34,9 +40,15 @@ export default function NewApplication() {
   const [formData, setFormData] = useState<FormData>({
     fullName: '',
     matricNo: '',
-    icNo: '',
-    licenseNo: '',
+    email: '',
+    phoneNumber: '',
+    faculty: '',
+    address: '',
     vehicleNo: '',
+    vehicleType: '',
+    vehicleBrand: '',
+    vehicleModel: '',
+    vehicleColor: '',
     documents: {
       ic: null,
       matric: null,
@@ -69,9 +81,15 @@ export default function NewApplication() {
     
     if (!formData.fullName) formErrors.fullName = 'Full name is required';
     if (!formData.matricNo) formErrors.matricNo = 'Matric number is required';
-    if (!formData.icNo) formErrors.icNo = 'IC number is required';
-    if (!formData.licenseNo) formErrors.licenseNo = 'License number is required';
+    if (!formData.email) formErrors.email = 'Email is required';
+    if (!formData.phoneNumber) formErrors.phoneNumber = 'Phone number is required';
+    if (!formData.faculty) formErrors.faculty = 'Faculty is required';
+    if (!formData.address) formErrors.address = 'Address is required';
     if (!formData.vehicleNo) formErrors.vehicleNo = 'Vehicle number is required';
+    if (!formData.vehicleType) formErrors.vehicleType = 'Vehicle type is required';
+    if (!formData.vehicleBrand) formErrors.vehicleBrand = 'Vehicle brand is required';
+    if (!formData.vehicleModel) formErrors.vehicleModel = 'Vehicle model is required';
+    if (!formData.vehicleColor) formErrors.vehicleColor = 'Vehicle color is required';
 
     setErrors(formErrors);
     return Object.keys(formErrors).length === 0;
@@ -126,43 +144,69 @@ export default function NewApplication() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Personal Information */}
             <div className="bg-white shadow-sm rounded-lg p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-6 flex items-center">
+              <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
                 <User className="w-5 h-5 mr-2 text-gray-400" />
                 Personal Information
               </h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="md:col-span-3">
-                  <InputField
-                    id="fullName"
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Full Name</label>
+                  <input
+                    type="text"
                     name="fullName"
-                    label="Full Name"
                     value={formData.fullName}
                     onChange={handleInputChange}
-                    error={errors.fullName}
-                    required
+                    className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                   />
                 </div>
                 <div>
-                  <InputField
-                    id="matricNo"
+                  <label className="block text-sm font-medium text-gray-700">Matric Number</label>
+                  <input
+                    type="text"
                     name="matricNo"
-                    label="Matric Number"
                     value={formData.matricNo}
                     onChange={handleInputChange}
-                    error={errors.matricNo}
-                    required
+                    className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                   />
                 </div>
                 <div>
-                  <InputField
-                    id="icNo"
-                    name="icNo"
-                    label="IC Number"
-                    value={formData.icNo}
+                  <label className="block text-sm font-medium text-gray-700">Email</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
                     onChange={handleInputChange}
-                    error={errors.icNo}
-                    required
+                    className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+                  <input
+                    type="tel"
+                    name="phoneNumber"
+                    value={formData.phoneNumber}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Faculty</label>
+                  <input
+                    type="text"
+                    name="faculty"
+                    value={formData.faculty}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Address</label>
+                  <input
+                    type="text"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                   />
                 </div>
               </div>
@@ -170,32 +214,59 @@ export default function NewApplication() {
 
             {/* Vehicle Information */}
             <div className="bg-white shadow-sm rounded-lg p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-6 flex items-center">
+              <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
                 <Car className="w-5 h-5 mr-2 text-gray-400" />
                 Vehicle Information
               </h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <InputField
-                    id="licenseNo"
-                    name="licenseNo"
-                    label="License Number"
-                    value={formData.licenseNo}
+                  <label className="block text-sm font-medium text-gray-700">Vehicle Number</label>
+                  <input
+                    type="text"
+                    name="vehicleNo"
+                    value={formData.vehicleNo}
                     onChange={handleInputChange}
-                    error={errors.licenseNo}
-                    required
+                    className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                   />
                 </div>
                 <div>
-                  <InputField
-                    id="vehicleNo"
-                    name="vehicleNo"
-                    label="Vehicle Number"
-                    value={formData.vehicleNo}
+                  <label className="block text-sm font-medium text-gray-700">Vehicle Type</label>
+                  <input
+                    type="text"
+                    name="vehicleType"
+                    value={formData.vehicleType}
                     onChange={handleInputChange}
-                    error={errors.vehicleNo}
-                    required
+                    className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Vehicle Brand</label>
+                  <input
+                    type="text"
+                    name="vehicleBrand"
+                    value={formData.vehicleBrand}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Vehicle Model</label>
+                  <input
+                    type="text"
+                    name="vehicleModel"
+                    value={formData.vehicleModel}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Vehicle Color</label>
+                  <input
+                    type="text"
+                    name="vehicleColor"
+                    value={formData.vehicleColor}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                   />
                 </div>
               </div>
