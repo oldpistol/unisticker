@@ -1,16 +1,20 @@
 'use client';
+
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import MenuBar from '@/components/MenuBar';
 import { getActiveMenuItems } from '@/utils/navigation';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { BackButton } from '@/components/BackButton';
+import { 
+  ArrowLeft,
+  User,
+  Car,
+  FileText,
+  AlertCircle
+} from 'lucide-react';
 import InputField from '@/components/InputField';
-import FormSection from '@/components/FormSection';
-import SubmitButton from '@/components/SubmitButton';
 import { FileUploadBox } from '@/components/FileUploadBox';
-import { Check, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface FormData {
   fullName: string;
@@ -25,7 +29,7 @@ interface FormData {
   };
 }
 
-const NewApplication = () => {
+export default function NewApplication() {
   const pathname = usePathname();
   const [formData, setFormData] = useState<FormData>({
     fullName: '',
@@ -39,17 +43,8 @@ const NewApplication = () => {
       license: null,
     },
   });
-  const [mounted, setMounted] = useState(false);
-  const [step, setStep] = useState(1);
   const [errors, setErrors] = useState<Partial<FormData>>({});
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return null; // or a loading spinner
-  }
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -69,79 +64,75 @@ const NewApplication = () => {
     }));
   };
 
+  const validateForm = () => {
+    let formErrors: Partial<FormData> = {};
+    
+    if (!formData.fullName) formErrors.fullName = 'Full name is required';
+    if (!formData.matricNo) formErrors.matricNo = 'Matric number is required';
+    if (!formData.icNo) formErrors.icNo = 'IC number is required';
+    if (!formData.licenseNo) formErrors.licenseNo = 'License number is required';
+    if (!formData.vehicleNo) formErrors.vehicleNo = 'Vehicle number is required';
+
+    setErrors(formErrors);
+    return Object.keys(formErrors).length === 0;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log(formData);
-  };
-
-  const validateStep = (currentStep: number) => {
-    let stepErrors: Partial<FormData> = {};
-    
-    if (currentStep === 1) {
-      if (!formData.fullName) stepErrors.fullName = 'Full name is required';
-      if (!formData.matricNo) stepErrors.matricNo = 'Matric number is required';
-      if (!formData.icNo) stepErrors.icNo = 'IC number is required';
-    } else if (currentStep === 2) {
-      if (!formData.licenseNo) stepErrors.licenseNo = 'License number is required';
-      if (!formData.vehicleNo) stepErrors.vehicleNo = 'Vehicle number is required';
-    }
-
-    setErrors(stepErrors);
-    return Object.keys(stepErrors).length === 0;
-  };
-
-  const nextStep = () => {
-    if (validateStep(step)) {
-      setStep(prev => Math.min(prev + 1, 3));
+    if (validateForm()) {
+      setShowConfirmModal(true);
     }
   };
 
-  const prevStep = () => {
-    setStep(prev => Math.max(prev - 1, 1));
+  const handleConfirmSubmit = async () => {
+    try {
+      // Add your submission logic here
+      console.log('Submitting application:', formData);
+      // Redirect to applications list after successful submission
+    } catch (error) {
+      console.error('Error submitting application:', error);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gray-50/30">
       <Navbar />
       <MenuBar items={getActiveMenuItems(pathname)} />
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <BackButton href="/applications" label="Back to Applications" />
-            <h1 className="text-3xl font-bold text-gray-900 mt-4">New Sticker Application</h1>
-            <p className="text-gray-600 mt-2">Please fill in all required information</p>
-          </div>
-        </div>
-        
-        {/* Progress Steps */}
-        <div className="mb-10">
-          <div className="flex items-center justify-between relative">
-            <div className="absolute left-0 right-0 top-1/2 h-0.5 bg-gray-200 -z-10" />
-            {['Personal Details', 'Vehicle Information', 'Documents'].map((label, idx) => (
-              <div key={label} className="flex flex-col items-center">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center 
-                  ${step > idx + 1 ? 'bg-green-500 ring-2 ring-green-100' : 
-                    step === idx + 1 ? 'bg-indigo-600 ring-2 ring-indigo-100' : 
-                    'bg-gray-200'} 
-                  text-white font-semibold transition-all duration-200`}>
-                  {step > idx + 1 ? <Check className="w-6 h-6" /> : idx + 1}
-                </div>
-                <span className="mt-2 text-sm font-medium text-gray-600">{label}</span>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header Section */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Link
+                href="/applications"
+                className="mr-4 p-2 text-gray-400 hover:text-gray-500"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Link>
+              <div>
+                <h1 className="text-2xl font-semibold text-gray-900">
+                  New Vehicle Sticker Application
+                </h1>
+                <p className="mt-1 text-sm text-gray-500">
+                  Fill in the required information to apply for a vehicle sticker
+                </p>
               </div>
-            ))}
+            </div>
           </div>
         </div>
 
-        <div className="bg-white shadow-lg rounded-2xl p-8 border border-gray-100">
-          <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Step 1: Personal Information */}
-            {step === 1 && (
-              <FormSection
-                title="Personal Information"
-                description="Please enter your personal details as they appear on your official documents."
-              >
-                <div className="grid gap-6">
+        <div className="w-full">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Personal Information */}
+            <div className="bg-white shadow-sm rounded-lg p-6">
+              <h2 className="text-lg font-medium text-gray-900 mb-6 flex items-center">
+                <User className="w-5 h-5 mr-2 text-gray-400" />
+                Personal Information
+              </h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="md:col-span-3">
                   <InputField
                     id="fullName"
                     name="fullName"
@@ -151,37 +142,41 @@ const NewApplication = () => {
                     error={errors.fullName}
                     required
                   />
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <InputField
-                      id="matricNo"
-                      name="matricNo"
-                      label="Matric Number"
-                      value={formData.matricNo}
-                      onChange={handleInputChange}
-                      error={errors.matricNo}
-                      required
-                    />
-                    <InputField
-                      id="icNo"
-                      name="icNo"
-                      label="IC Number"
-                      value={formData.icNo}
-                      onChange={handleInputChange}
-                      error={errors.icNo}
-                      required
-                    />
-                  </div>
                 </div>
-              </FormSection>
-            )}
+                <div>
+                  <InputField
+                    id="matricNo"
+                    name="matricNo"
+                    label="Matric Number"
+                    value={formData.matricNo}
+                    onChange={handleInputChange}
+                    error={errors.matricNo}
+                    required
+                  />
+                </div>
+                <div>
+                  <InputField
+                    id="icNo"
+                    name="icNo"
+                    label="IC Number"
+                    value={formData.icNo}
+                    onChange={handleInputChange}
+                    error={errors.icNo}
+                    required
+                  />
+                </div>
+              </div>
+            </div>
 
-            {/* Step 2: Vehicle Information */}
-            {step === 2 && (
-              <FormSection
-                title="Vehicle Information"
-                description="Enter your vehicle and license details accurately."
-              >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Vehicle Information */}
+            <div className="bg-white shadow-sm rounded-lg p-6">
+              <h2 className="text-lg font-medium text-gray-900 mb-6 flex items-center">
+                <Car className="w-5 h-5 mr-2 text-gray-400" />
+                Vehicle Information
+              </h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
                   <InputField
                     id="licenseNo"
                     name="licenseNo"
@@ -191,6 +186,8 @@ const NewApplication = () => {
                     error={errors.licenseNo}
                     required
                   />
+                </div>
+                <div>
                   <InputField
                     id="vehicleNo"
                     name="vehicleNo"
@@ -201,16 +198,18 @@ const NewApplication = () => {
                     required
                   />
                 </div>
-              </FormSection>
-            )}
+              </div>
+            </div>
 
-            {/* Step 3: Documents */}
-            {step === 3 && (
-              <FormSection
-                title="Required Documents"
-                description="Upload clear, legible scans or photos of your documents."
-              >
-                <div className="grid gap-6">
+            {/* Documents */}
+            <div className="bg-white shadow-sm rounded-lg p-6">
+              <h2 className="text-lg font-medium text-gray-900 mb-6 flex items-center">
+                <FileText className="w-5 h-5 mr-2 text-gray-400" />
+                Required Documents
+              </h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
                   <FileUploadBox
                     name="ic"
                     label="IC Card"
@@ -218,6 +217,8 @@ const NewApplication = () => {
                     onFileChange={handleFileChange}
                     currentFile={formData.documents.ic}
                   />
+                </div>
+                <div>
                   <FileUploadBox
                     name="matric"
                     label="Matric Card"
@@ -225,6 +226,8 @@ const NewApplication = () => {
                     onFileChange={handleFileChange}
                     currentFile={formData.documents.matric}
                   />
+                </div>
+                <div>
                   <FileUploadBox
                     name="license"
                     label="Driving License"
@@ -233,40 +236,54 @@ const NewApplication = () => {
                     currentFile={formData.documents.license}
                   />
                 </div>
-              </FormSection>
-            )}
+              </div>
+            </div>
 
-            {/* Navigation Buttons */}
-            <div className="flex justify-between pt-6 border-t border-gray-100">
-              {step > 1 ? (
-                <button
-                  type="button"
-                  onClick={prevStep}
-                  className="flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  Previous
-                </button>
-              ) : <div />}
-              
-              {step < 3 ? (
-                <button
-                  type="button"
-                  onClick={nextStep}
-                  className="flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors duration-200"
-                >
-                  Next
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              ) : (
-                <SubmitButton label="Submit Application" />
-              )}
+            <div className="flex justify-end space-x-3">
+              <Link
+                href="/applications"
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-500"
+              >
+                Cancel
+              </Link>
+              <button
+                type="submit"
+                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Submit Application
+              </button>
             </div>
           </form>
         </div>
+
+        {/* Confirmation Modal */}
+        {showConfirmModal && (
+          <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Confirm Submission
+              </h3>
+              <p className="text-sm text-gray-500 mb-4">
+                Are you sure you want to submit this application? Please ensure all information is correct.
+              </p>
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowConfirmModal(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-500"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmSubmit}
+                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
+                >
+                  Confirm Submit
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
-};
-
-export default NewApplication;
+}
