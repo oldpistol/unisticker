@@ -11,7 +11,7 @@ UniSticker is a web application designed to modernize the vehicle sticker applic
 - Axios for API calls
 
 ### Backend
-- Laravel 10
+- Laravel 11
 - PHP 8.2
 - Apache Web Server
 - MySQL 8.0
