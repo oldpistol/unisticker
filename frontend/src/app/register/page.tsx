@@ -118,7 +118,7 @@ export default function Register() {
         throw new Error('Backend API URL is not configured');
       }
 
-      const response = await fetch(`${apiUrl}/api/auth/register`, {
+      const response = await fetch(`${apiUrl}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
