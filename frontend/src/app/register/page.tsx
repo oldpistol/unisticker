@@ -385,22 +385,6 @@ export default function Register() {
 
             {/* Submit Button Section */}
             <div className="bg-gray-50 rounded-lg p-6 border">
-              {/* Debug information */}
-              {process.env.NODE_ENV === 'development' && (
-                <div className="mb-4 text-xs text-gray-500">
-                  <div>Full Name: {Boolean(formData.fullName).toString()}</div>
-                  <div>ID Number: {Boolean(formData.identificationNumber).toString()}</div>
-                  <div>Matric: {Boolean(formData.matricNumber).toString()}</div>
-                  <div>Mobile: {Boolean(formData.mobileNumber).toString()}</div>
-                  <div>Email: {Boolean(formData.email).toString()}</div>
-                  <div>Password: {Boolean(formData.password).toString()}</div>
-                  <div>Confirm Password: {Boolean(formData.confirmPassword).toString()}</div>
-                  <div>Email Error: {Boolean(emailError).toString()}</div>
-                  <div>Password Error: {Boolean(passwordError).toString()}</div>
-                  <div>Confirm Password Error: {Boolean(confirmPasswordError).toString()}</div>
-                  <div>Valid ID: {validateIdentificationNumber(formData.identificationNumber, formData.identificationType).toString()}</div>
-                </div>
-              )}
               <button
                 type="submit"
                 disabled={
