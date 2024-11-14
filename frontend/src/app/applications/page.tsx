@@ -32,7 +32,7 @@ interface ApplicationData {
   status: "Active" | "Expired" | "Pending" | "Rejected" | "Draft";
 }
 
-const Applications = () => {
+function ApplicationsPage() {
   const pathname = usePathname();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState<string | undefined>(undefined);
@@ -259,4 +259,4 @@ const Applications = () => {
   );
 };
 
-export default withAuth(Applications);
+export default withAuth(ApplicationsPage);

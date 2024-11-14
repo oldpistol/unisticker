@@ -3,15 +3,18 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-export default function withAuth(WrappedComponent: React.ComponentType<any>) {
-  return function AuthComponent(props: any) {
+const withAuth = <P extends object>(
+  WrappedComponent: React.ComponentType<P>
+) => {
+  return function WithAuthComponent(props: P) {
     const router = useRouter();
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
       const checkAuth = async () => {
         try {
-          const token = localStorage.getItem('token');
+          const token = localStorage.getItem('auth_token');
           if (!token) {
             router.push('/login');
             return;
@@ -22,23 +25,27 @@ export default function withAuth(WrappedComponent: React.ComponentType<any>) {
             throw new Error('Backend API URL is not configured');
           }
 
-          const response = await fetch(`${apiUrl}/api/auth/check`, {
+          const response = await fetch(`${apiUrl}/auth/check`, {
+            method: 'GET',
             headers: {
               'Authorization': `Bearer ${token}`,
               'Accept': 'application/json',
             },
-            credentials: 'include',
           });
 
           if (!response.ok) {
-            throw new Error('Authentication check failed');
+            localStorage.removeItem('auth_token');
+            router.push('/login');
+            return;
           }
 
-          setIsLoading(false);
+          setIsAuthenticated(true);
         } catch (error) {
           console.error('Auth check error:', error);
-          localStorage.removeItem('token');
+          localStorage.removeItem('auth_token');
           router.push('/login');
+        } finally {
+          setIsLoading(false);
         }
       };
 
@@ -47,12 +54,18 @@ export default function withAuth(WrappedComponent: React.ComponentType<any>) {
 
     if (isLoading) {
       return (
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="h-32 w-32 animate-spin rounded-full border-b-2 border-t-2 border-indigo-600"></div>
         </div>
       );
     }
 
+    if (!isAuthenticated) {
+      return null;
+    }
+
     return <WrappedComponent {...props} />;
   };
-}
+};
+
+export default withAuth;

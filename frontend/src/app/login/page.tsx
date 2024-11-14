@@ -13,49 +13,36 @@ export default function LoginPage() {
     password: ''
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const [emailError, setEmailError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
-    // Check if user is already authenticated
-    const checkAuth = async () => {
-      try {
-        // First check if we have a token
-        const token = localStorage.getItem('token');
-        if (!token) {
-          return; // No token, user needs to login
-        }
-
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-        if (!apiUrl) {
-          throw new Error('Backend API URL is not configured');
-        }
-
-        const response = await fetch(`${apiUrl}/api/auth/check`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json',
-          },
-          credentials: 'include',
-        });
-
-        if (response.ok) {
-          // User is authenticated, redirect to applications page
-          router.push('/applications');
-        } else {
-          // Token is invalid, remove it
-          localStorage.removeItem('token');
-        }
-      } catch (error) {
-        // If there's an error checking auth status, remove the token
-        console.error('Auth check error:', error);
-        localStorage.removeItem('token');
-      }
-    };
-
-    checkAuth();
+    // Check if user has auth token
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      router.push('/applications');
+    }
   }, [router]);
+
+  useEffect(() => {
+    // Handle token from URL
+    const token = searchParams.get('token');
+    if (token) {
+      // Store token in localStorage
+      localStorage.setItem('auth_token', token);
+      // Redirect to applications page
+      router.push('/applications');
+    }
+  }, [searchParams, router]);
+
+  useEffect(() => {
+    // Check for URL error parameter
+    const urlError = searchParams.get('error');
+    if (urlError) {
+      setError(decodeURIComponent(urlError.replace(/\+/g, ' ')));
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     // Check for success message in URL
@@ -90,12 +77,10 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateEmail(formData.email)) {
-      setEmailError('Please use your UTM student email (@graduate.utm.my or @live.utm.my)');
-      return;
-    }
     setIsLoading(true);
     setError('');
+    setSuccessMessage('');
+
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL;
       
@@ -103,42 +88,69 @@ export default function LoginPage() {
         throw new Error('Backend API URL is not configured');
       }
 
-      const response = await fetch(`${apiUrl}/api/auth/login`, {
+      const response = await fetch(`${apiUrl}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: JSON.stringify(formData),
         credentials: 'include',
+        body: JSON.stringify(formData),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
+        throw new Error(data.message || 'Failed to login');
       }
 
       // Store the token
       if (data.token) {
-        localStorage.setItem('token', data.token);
+        localStorage.setItem('auth_token', data.token);
+        router.push('/applications');
+      } else {
+        throw new Error('No token received');
       }
 
-      // Redirect to applications page
-      router.push('/applications');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Invalid email or password');
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleGoogleSignIn = () => {
-    router.push('/applications');
+  const handleGoogleSignIn = async () => {
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      if (!apiUrl) {
+        throw new Error('Backend API URL is not configured');
+      }
+
+      // Get CSRF cookie first
+      await fetch(`${apiUrl}/sanctum/csrf-cookie`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      // Redirect to Google OAuth URL
+      window.location.href = `${apiUrl}/api/auth/google`;
+    } catch (error) {
+      console.error('Google sign-in error:', error);
+      setError('Failed to initiate Google sign-in');
+    }
   };
 
   const handleMicrosoftSignIn = () => {
     router.push('/applications');
+  };
+
+  const handleGoogleLogin = () => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (!apiUrl) {
+      setError('Backend API URL is not configured');
+      return;
+    }
+    window.location.href = `${apiUrl}/auth/google`;
   };
 
   return (
@@ -284,7 +296,7 @@ export default function LoginPage() {
                     <div className="grid grid-cols-1 gap-3">
                       <button
                         type="button"
-                        onClick={handleGoogleSignIn}
+                        onClick={handleGoogleLogin}
                         className="group relative flex justify-center items-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors shadow-none sm:shadow-sm"
                       >
                         <svg className="h-5 w-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

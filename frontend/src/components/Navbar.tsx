@@ -36,13 +36,13 @@ export default function Navbar({ userName }: NavbarProps) {
         throw new Error('Backend API URL is not configured');
       }
 
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('auth_token');
       if (!token) {
         router.push('/login');
         return;
       }
 
-      const response = await fetch(`${apiUrl}/api/auth/logout`, {
+      const response = await fetch(`${apiUrl}/auth/logout`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
