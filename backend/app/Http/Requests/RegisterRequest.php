@@ -21,15 +21,17 @@ class RegisterRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+        $rules = [
             'name' => ['required', 'string', 'max:255'],
-            'matric_no' => ['required', 'string', 'max:255', 'unique:users'],
-            'phone' => ['required', 'string', 'max:255', 'unique:users'],
-            'ic_no' => ['required_if:passport_no,null', 'string', 'max:255', 'unique:users'],
-            'passport_no' => ['required_if:ic_no, null', 'string', 'max:255', 'unique:users'],
+            'matric_id' => ['required', 'string', 'max:255', 'unique:users'],
+            'phone_no' => ['required', 'string', 'max:255', 'unique:users'],
+            'ic_no' => ['required_if:passport_no,null', 'string', 'max:255', 'unique:users', 'nullable'],
+            'passport_no' => ['required_if:ic_no,null', 'string', 'max:255', 'unique:users', 'nullable'],
             'matric_id' => ['required', 'string', 'max:255', 'unique:users'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ];
+
+        return $rules;
     }
 }

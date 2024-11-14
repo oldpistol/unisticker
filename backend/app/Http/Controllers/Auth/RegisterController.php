@@ -5,20 +5,19 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RegisterRequest;
 use App\Models\User;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
 
 class RegisterController extends Controller
 {
     public function __invoke(RegisterRequest $request)
     {
-        // Get the validated data
         $validated = $request->validated();
 
-        // Create a new user
         User::create([
             'name' => $validated['name'],
-            'matric_no' => $validated['matric_no'],
-            'phone' => $validated['phone'],
+            'matric_id' => $validated['matric_id'],
+            'phone_no' => $validated['phone_no'],
             'ic_no' => $validated['ic_no'],
             'passport_no' => $validated['passport_no'],
             'matric_id' => $validated['matric_id'],
@@ -26,9 +25,8 @@ class RegisterController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
-        // Return success response
         return response()->json([
             'message' => 'User created successfully',
-        ], 201);
+        ], Response::HTTP_CREATED);
     }
 }

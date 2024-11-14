@@ -4,4 +4,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::post('/register', RegisterController::class);
+// route group for auth
+Route::group(['prefix' => 'auth'], function () {
+    Route::post('/register', RegisterController::class);
+});
