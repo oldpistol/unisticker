@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Table from '@/components/Table';
 import Pagination from '@/components/Pagination';
+import withAuth from '@/middleware/withAuth';
 import { 
   Plus, 
   Search, 
@@ -31,7 +32,7 @@ interface ApplicationData {
   status: "Active" | "Expired" | "Pending" | "Rejected" | "Draft";
 }
 
-export default function Applications() {
+const Applications = () => {
   const pathname = usePathname();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState<string | undefined>(undefined);
@@ -256,4 +257,6 @@ export default function Applications() {
       </main>
     </div>
   );
-}
+};
+
+export default withAuth(Applications);

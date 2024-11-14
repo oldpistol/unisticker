@@ -5,6 +5,7 @@ import MenuBar from '@/components/MenuBar';
 import { menuItems } from '@/config/navigation';
 import { getActiveMenuItems } from '@/utils/navigation';
 import { usePathname } from 'next/navigation';
+import withAuth from '@/middleware/withAuth';
 
 interface ChatMessage {
   id: number;
@@ -14,7 +15,7 @@ interface ChatMessage {
   status?: 'sending' | 'sent' | 'error';
 }
 
-export default function ChatBot() {
+const ChatBot = () => {
   const pathname = usePathname();
   const activeMenuItems = getActiveMenuItems(pathname);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -169,4 +170,6 @@ export default function ChatBot() {
       </div>
     </div>
   );
-}
+};
+
+export default withAuth(ChatBot);

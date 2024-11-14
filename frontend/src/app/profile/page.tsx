@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import { InputField, FormSection, SubmitButton } from '@/components';
 import MenuBar from '@/components/MenuBar';
 import Navbar from '@/components/Navbar';
+import withAuth from '@/middleware/withAuth';
 
 interface ProfileData {
   fullName: string;
@@ -20,7 +21,7 @@ interface PasswordData {
   confirmPassword: string;
 }
 
-export default function Profile() {
+const Profile = () => {
   const pathname = usePathname();
   const [profileData, setProfileData] = useState<ProfileData>({
     fullName: '',
@@ -189,4 +190,6 @@ export default function Profile() {
       </div>
     </>
   );
-}
+};
+
+export default withAuth(Profile);

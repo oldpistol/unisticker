@@ -6,6 +6,7 @@ import Navbar from '@/components/Navbar';
 import MenuBar from '@/components/MenuBar';
 import { getActiveMenuItems } from '@/utils/navigation';
 import Link from 'next/link';
+import withAuth from '@/middleware/withAuth';
 import { 
   ArrowLeft,
   User,
@@ -45,7 +46,7 @@ interface DocumentUrls {
   license: string | null;
 }
 
-export default function EditApplication() {
+const EditApplication = () => {
   const router = useRouter();
   const params = useParams();
   const [formData, setFormData] = useState<FormData>({
@@ -383,4 +384,6 @@ export default function EditApplication() {
       </main>
     </div>
   );
-}
+};
+
+export default withAuth(EditApplication);

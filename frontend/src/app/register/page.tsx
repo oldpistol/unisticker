@@ -1,12 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { User, Lock, Mail, Phone, FileText } from 'lucide-react';
 
 type IdentificationType = 'ic' | 'passport';
 
 export default function Register() {
+  const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
     identificationType: 'ic' as IdentificationType,
@@ -21,6 +24,13 @@ export default function Register() {
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const validateEmail = (email: string) => {
     const emailParts = email.split('@');
@@ -35,13 +45,15 @@ export default function Register() {
 
   const validateIdentificationNumber = (id: string, type: IdentificationType) => {
     if (type === 'ic') {
-      return /^\d{12}$/.test(id);
+      // Allow any number between 10-14 digits for IC
+      return /^\d{10,14}$/.test(id);
     }
-    return id.length > 0;
+    // For passport, just ensure it's not empty and at least 5 characters
+    return id.length >= 5;
   };
 
   const validateMatricNumber = (matricNumber: string) => {
-    return /^[A-Z]\d{2}[A-Z]{2}\d{4}$/.test(matricNumber);
+    return matricNumber.length > 0;
   };
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -89,9 +101,61 @@ export default function Register() {
     setFormData({ ...formData, mobileNumber: value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission
+    
+    if (!mounted) return;
+
+    // Reset all errors
+    setError('');
+    setFormErrors({});
+    setIsLoading(true);
+
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      
+      if (!apiUrl) {
+        throw new Error('Backend API URL is not configured');
+      }
+
+      const response = await fetch(`${apiUrl}/api/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.fullName,
+          matric_id: formData.matricNumber,
+          phone_no: formData.mobileNumber,
+          ic_no: formData.identificationType === 'ic' ? formData.identificationNumber : null,
+          passport_no: formData.identificationType === 'passport' ? formData.identificationNumber : null,
+          email: formData.email,
+          password: formData.password,
+          password_confirmation: formData.confirmPassword,
+        }),
+        credentials: 'include',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (data.errors) {
+          // Handle validation errors
+          setFormErrors(data.errors);
+          throw new Error('Please fix the highlighted fields');
+        }
+        throw new Error(data.message || 'Registration failed');
+      }
+
+      // Only redirect if component is mounted
+      if (mounted) {
+        router.push('/login?success=true&message=Registration successful! Please login with your credentials.');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Registration failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -144,13 +208,17 @@ export default function Register() {
                   <input
                     type="text"
                     id="fullName"
-                    name="fullName"
+                    name="name"
                     required
                     value={formData.fullName}
                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                    className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
-                    placeholder="Enter your full name"
+                    className={`mt-1 block w-full rounded-lg border ${
+                      formErrors['name'] ? 'border-red-300' : 'border-gray-300'
+                    } px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm`}
                   />
+                  {formErrors['name'] && (
+                    <p className="mt-1.5 text-xs text-red-600">{formErrors['name']}</p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -178,12 +246,22 @@ export default function Register() {
                     <input
                       type="text"
                       id="identificationNumber"
-                      name="identificationNumber"
+                      name={formData.identificationType === 'ic' ? 'ic_no' : 'passport_no'}
                       required
                       value={formData.identificationNumber}
                       onChange={(e) => setFormData({ ...formData, identificationNumber: e.target.value })}
-                      className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                      className={`mt-1 block w-full rounded-lg border ${
+                        (formData.identificationType === 'ic' ? formErrors['ic_no'] : formErrors['passport_no'])
+                          ? 'border-red-300'
+                          : 'border-gray-300'
+                      } px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm`}
                     />
+                    {formData.identificationType === 'ic' && formErrors['ic_no'] && (
+                      <p className="mt-1.5 text-xs text-red-600">{formErrors['ic_no']}</p>
+                    )}
+                    {formData.identificationType === 'passport' && formErrors['passport_no'] && (
+                      <p className="mt-1.5 text-xs text-red-600">{formErrors['passport_no']}</p>
+                    )}
                   </div>
                 </div>
 
@@ -195,12 +273,17 @@ export default function Register() {
                     <input
                       type="text"
                       id="matricNumber"
-                      name="matricNumber"
+                      name="matric_id"
                       required
                       value={formData.matricNumber}
                       onChange={(e) => setFormData({ ...formData, matricNumber: e.target.value.toUpperCase() })}
-                      className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm uppercase"
+                      className={`mt-1 block w-full rounded-lg border ${
+                        formErrors['matric_id'] ? 'border-red-300' : 'border-gray-300'
+                      } px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm uppercase`}
                     />
+                    {formErrors['matric_id'] && (
+                      <p className="mt-1.5 text-xs text-red-600">{formErrors['matric_id']}</p>
+                    )}
                   </div>
 
                   <div>
@@ -210,13 +293,18 @@ export default function Register() {
                     <input
                       type="tel"
                       id="mobileNumber"
-                      name="mobileNumber"
+                      name="phone_no"
                       required
                       value={formData.mobileNumber}
                       onChange={handleMobileChange}
-                      className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
-                      placeholder="0123456789"
+                      className={`mt-1 block w-full rounded-lg border ${
+                        formErrors['phone_no'] ? 'border-red-300' : 'border-gray-300'
+                      } px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm`}
+                      placeholder="60123456789"
                     />
+                    {formErrors['phone_no'] && (
+                      <p className="mt-1.5 text-xs text-red-600">{formErrors['phone_no']}</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -242,12 +330,12 @@ export default function Register() {
                     value={formData.email}
                     onChange={handleEmailChange}
                     className={`mt-1 block w-full rounded-lg border ${
-                      emailError ? 'border-red-300' : 'border-gray-300'
+                      emailError || formErrors['email'] ? 'border-red-300' : 'border-gray-300'
                     } px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm`}
                     placeholder="student@graduate.utm.my"
                   />
-                  {emailError && (
-                    <p className="mt-1.5 text-xs text-red-600">{emailError}</p>
+                  {(emailError || formErrors['email']) && (
+                    <p className="mt-1.5 text-xs text-red-600">{formErrors['email'] || emailError}</p>
                   )}
                 </div>
 
@@ -264,11 +352,11 @@ export default function Register() {
                       value={formData.password}
                       onChange={handlePasswordChange}
                       className={`mt-1 block w-full rounded-lg border ${
-                        passwordError ? 'border-red-300' : 'border-gray-300'
+                        passwordError || formErrors['password'] ? 'border-red-300' : 'border-gray-300'
                       } px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm`}
                     />
-                    {passwordError && (
-                      <p className="mt-1.5 text-xs text-red-600">{passwordError}</p>
+                    {(passwordError || formErrors['password']) && (
+                      <p className="mt-1.5 text-xs text-red-600">{formErrors['password'] || passwordError}</p>
                     )}
                   </div>
 
@@ -279,16 +367,16 @@ export default function Register() {
                     <input
                       type="password"
                       id="confirmPassword"
-                      name="confirmPassword"
+                      name="password_confirmation"
                       required
                       value={formData.confirmPassword}
                       onChange={handleConfirmPasswordChange}
                       className={`mt-1 block w-full rounded-lg border ${
-                        confirmPasswordError ? 'border-red-300' : 'border-gray-300'
+                        confirmPasswordError || formErrors['password_confirmation'] ? 'border-red-300' : 'border-gray-300'
                       } px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm`}
                     />
-                    {confirmPasswordError && (
-                      <p className="mt-1.5 text-xs text-red-600">{confirmPasswordError}</p>
+                    {(confirmPasswordError || formErrors['password_confirmation']) && (
+                      <p className="mt-1.5 text-xs text-red-600">{formErrors['password_confirmation'] || confirmPasswordError}</p>
                     )}
                   </div>
                 </div>
@@ -297,6 +385,22 @@ export default function Register() {
 
             {/* Submit Button Section */}
             <div className="bg-gray-50 rounded-lg p-6 border">
+              {/* Debug information */}
+              {process.env.NODE_ENV === 'development' && (
+                <div className="mb-4 text-xs text-gray-500">
+                  <div>Full Name: {Boolean(formData.fullName).toString()}</div>
+                  <div>ID Number: {Boolean(formData.identificationNumber).toString()}</div>
+                  <div>Matric: {Boolean(formData.matricNumber).toString()}</div>
+                  <div>Mobile: {Boolean(formData.mobileNumber).toString()}</div>
+                  <div>Email: {Boolean(formData.email).toString()}</div>
+                  <div>Password: {Boolean(formData.password).toString()}</div>
+                  <div>Confirm Password: {Boolean(formData.confirmPassword).toString()}</div>
+                  <div>Email Error: {Boolean(emailError).toString()}</div>
+                  <div>Password Error: {Boolean(passwordError).toString()}</div>
+                  <div>Confirm Password Error: {Boolean(confirmPasswordError).toString()}</div>
+                  <div>Valid ID: {validateIdentificationNumber(formData.identificationNumber, formData.identificationType).toString()}</div>
+                </div>
+              )}
               <button
                 type="submit"
                 disabled={
@@ -311,12 +415,15 @@ export default function Register() {
                   Boolean(passwordError) ||
                   Boolean(confirmPasswordError) ||
                   !validateIdentificationNumber(formData.identificationNumber, formData.identificationType) ||
-                  !validateMatricNumber(formData.matricNumber)
+                  isLoading
                 }
                 className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Create account
+                {isLoading ? 'Loading...' : 'Create account'}
               </button>
+              {error && (
+                <p className="mt-4 text-center text-sm text-red-600">{error}</p>
+              )}
               <p className="mt-4 text-center text-sm text-gray-500">
                 Already have an account?{' '}
                 <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
+import withAuth from '@/middleware/withAuth';
 import { 
   ArrowLeft,
   User,
@@ -37,7 +38,7 @@ interface ApplicationDetail {
   timeline: Array<{ status: string; date: string; comment?: string }>;
 }
 
-export default function ApplicationDetail() {
+const ApplicationDetail = () => {
   const router = useRouter();
   const params = useParams();
   const pathname = usePathname();
@@ -264,4 +265,6 @@ export default function ApplicationDetail() {
       </main>
     </div>
   );
-}
+};
+
+export default withAuth(ApplicationDetail);

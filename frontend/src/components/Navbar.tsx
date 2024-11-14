@@ -1,6 +1,7 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { User } from 'lucide-react';
 
 interface NavbarProps {
@@ -8,6 +9,7 @@ interface NavbarProps {
 }
 
 export default function Navbar({ userName }: NavbarProps) {
+  const router = useRouter();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -26,6 +28,43 @@ export default function Navbar({ userName }: NavbarProps) {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isProfileOpen]);
+
+  const handleLogout = async () => {
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      if (!apiUrl) {
+        throw new Error('Backend API URL is not configured');
+      }
+
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+
+      const response = await fetch(`${apiUrl}/api/auth/logout`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Logout failed');
+      }
+
+      // Clear token and redirect to login
+      localStorage.removeItem('token');
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // If logout fails, still clear token and redirect
+      localStorage.removeItem('token');
+      router.push('/login');
+    }
+  };
 
   return (
     <div className="w-full bg-white/80 backdrop-blur-sm border-b border-gray-200">
@@ -49,21 +88,20 @@ export default function Navbar({ userName }: NavbarProps) {
             
             {isProfileOpen && (
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg border border-gray-200 shadow-lg">
-                <div className="px-4 py-3 border-b border-gray-200">
-                  <p className="text-sm font-medium text-gray-900">{userName || 'Guest'}</p>
+                <div className="py-1">
+                  {userName && (
+                    <div className="px-4 py-2 text-sm text-gray-700 border-b border-gray-200">
+                      Signed in as<br />
+                      <span className="font-medium">{userName}</span>
+                    </div>
+                  )}
+                  <button
+                    onClick={handleLogout}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                  >
+                    Sign out
+                  </button>
                 </div>
-                <Link 
-                  href="/profile"
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                >
-                  Profile
-                </Link>
-                <Link 
-                  href="/login"
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                >
-                  Sign out
-                </Link>
               </div>
             )}
           </div>
