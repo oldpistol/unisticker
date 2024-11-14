@@ -95,6 +95,13 @@ export default function Navbar({ userName }: NavbarProps) {
                       <span className="font-medium">{userName}</span>
                     </div>
                   )}
+                  <Link
+                    href="/profile"
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                    onClick={() => setIsProfileOpen(false)}
+                  >
+                    Profile
+                  </Link>
                   <button
                     onClick={handleLogout}
                     className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
