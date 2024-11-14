@@ -91,6 +91,6 @@ it('user cannot register using existing email', function () {
 
     $response->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY)
         ->assertJsonValidationErrors([
-            'email' => 'The email has already been taken.'
+            'email' => 'The email has already been taken.',
         ]);
 });

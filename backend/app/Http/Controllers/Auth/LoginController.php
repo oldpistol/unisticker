@@ -16,12 +16,12 @@ class LoginController extends Controller
         $user = User::where('email', $validated['email'])->first();
 
         // check if user exists
-        if (!$user) {
+        if (! $user) {
             return response()->json(['message' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
         }
 
         // check if password is correct
-        if (!password_verify($validated['password'], $user->password)) {
+        if (! password_verify($validated['password'], $user->password)) {
             return response()->json(['message' => 'Invalid credential'], Response::HTTP_UNAUTHORIZED);
         }
 
