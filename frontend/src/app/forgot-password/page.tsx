@@ -16,7 +16,7 @@ export default function ForgotPassword() {
     setError('');
 
     try {
-      const response = await fetch('/api/auth/forgot-password', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/forgot-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -24,13 +24,15 @@ export default function ForgotPassword() {
         body: JSON.stringify({ email }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to send reset email');
+        throw new Error(data.message || 'Failed to send reset email');
       }
 
       setSuccess(true);
     } catch (err) {
-      setError('Failed to send reset email. Please try again.');
+      setError(err instanceof Error ? err.message : 'Failed to send reset email. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -95,8 +97,11 @@ export default function ForgotPassword() {
               <div className="text-center">
                 <div className="rounded-md bg-green-50 p-4 mb-6">
                   <h3 className="text-sm font-medium text-green-800">
-                    Check your email for reset instructions
+                    Reset instructions sent!
                   </h3>
+                  <p className="mt-2 text-sm text-green-700">
+                    Check your email for password reset instructions. The link will expire in 60 minutes.
+                  </p>
                 </div>
                 <p className="text-sm text-gray-500 mb-4">
                   Didn't receive the email? Check your spam folder or try again.
@@ -108,39 +113,36 @@ export default function ForgotPassword() {
                   }}
                   className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
                 >
-                  Try another email
+                  Try again
                 </button>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                    Email Address
+                    Email address
                   </label>
-                  <input
-                    type="email"
-                    id="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
-                    placeholder="student@graduate.utm.my"
-                  />
+                  <div className="mt-1">
+                    <input
+                      id="email"
+                      name="email"
+                      type="email"
+                      autoComplete="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="student@utm.my"
+                      className="block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                    />
+                  </div>
                 </div>
 
                 <button
                   type="submit"
-                  disabled={isLoading || !email}
-                  className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  disabled={isLoading}
+                  className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isLoading ? (
-                    <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                  ) : (
-                    'Reset password'
-                  )}
+                  {isLoading ? 'Sending Instructions...' : 'Send Reset Instructions'}
                 </button>
               </form>
             )}
@@ -149,4 +151,4 @@ export default function ForgotPassword() {
       </main>
     </div>
   );
-} 
+}
