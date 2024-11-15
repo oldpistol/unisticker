@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function AdminLoginPage() {
@@ -12,15 +12,60 @@ export default function AdminLoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
+  useEffect(() => {
+    // Check if user is already authenticated
+    const checkAuth = async () => {
+      const token = localStorage.getItem('admin_token');
+      if (token) {
+        try {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/auth/check`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data.authenticated) {
+              router.push('/admin/dashboard');
+            }
+          }
+        } catch (error) {
+          // If there's an error checking auth, we'll let them stay on the login page
+          console.error('Error checking auth:', error);
+        }
+      }
+    };
+
+    checkAuth();
+  }, [router]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
     try {
-      // Add your admin authentication logic here
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Invalid admin credentials');
+      }
+
+      // Store the token
+      localStorage.setItem('admin_token', data.token);
+
+      // Redirect to admin dashboard
       router.push('/admin/dashboard');
     } catch (err) {
-      setError('Invalid admin credentials');
+      setError(err instanceof Error ? err.message : 'Invalid admin credentials');
     } finally {
       setIsLoading(false);
     }

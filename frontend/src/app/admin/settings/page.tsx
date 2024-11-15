@@ -1,4 +1,5 @@
 'use client';
+import { withAdminAuth } from '@/middleware/withAdminAuth';
 import { useState } from 'react';
 import AdminNavbar from '@/components/admin/AdminNavbar';
 import AdminMenuBar from '@/components/admin/AdminMenuBar';
@@ -27,7 +28,7 @@ interface SMSConfig {
   endpoint: string;
 }
 
-export default function Settings() {
+function AdminSettings() {
   const [emailConfig, setEmailConfig] = useState<EmailConfig>({
     host: 'smtp.gmail.com',
     port: '587',
@@ -332,4 +333,6 @@ export default function Settings() {
       </main>
     </div>
   );
-} 
+}
+
+export default withAdminAuth(AdminSettings);

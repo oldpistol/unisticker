@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { withAdminAuth } from '@/middleware/withAdminAuth';
 import AdminNavbar from '@/components/admin/AdminNavbar';
 import AdminMenuBar from '@/components/admin/AdminMenuBar';
 import { getActiveMenuItems } from '@/utils/navigation';
@@ -28,7 +29,7 @@ interface RecentApplication {
   status: "Pending" | "Approved" | "Rejected";
 }
 
-export default function AdminDashboard() {
+function AdminDashboard() {
   const pathname = usePathname();
 
   // Sample data for recent applications
@@ -164,4 +165,6 @@ export default function AdminDashboard() {
       </main>
     </div>
   );
-} 
+}
+
+export default withAdminAuth(AdminDashboard);

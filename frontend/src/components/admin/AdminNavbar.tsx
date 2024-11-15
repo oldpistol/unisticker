@@ -14,9 +14,33 @@ export default function AdminNavbar() {
   const router = useRouter();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
-  const handleSignOut = () => {
-    // Add sign out logic here
-    router.push('/admin/login');
+  const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem('admin_token');
+      
+      if (!token) {
+        throw new Error('No token found');
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/auth/logout`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Logout failed');
+      }
+
+      // Clear admin token
+      localStorage.removeItem('admin_token');
+
+      // Redirect to login page
+      router.push('/admin/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   return (
@@ -53,7 +77,7 @@ export default function AdminNavbar() {
                     Profile Settings
                   </Link>
                   <button
-                    onClick={handleSignOut}
+                    onClick={handleLogout}
                     className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
                     <LogOut className="h-4 w-4 mr-3 text-gray-500" />

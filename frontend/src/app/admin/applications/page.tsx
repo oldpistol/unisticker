@@ -1,5 +1,7 @@
 'use client';
+
 import { useState, useEffect } from 'react';
+import { withAdminAuth } from '@/middleware/withAdminAuth';
 import AdminNavbar from '@/components/admin/AdminNavbar';
 import AdminMenuBar from '@/components/admin/AdminMenuBar';
 import Table from '@/components/Table';
@@ -134,7 +136,7 @@ const mockApplications: Application[] = [
   }
 ];
 
-export default function ApplicationsList() {
+export default withAdminAuth(function ApplicationsList() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -388,4 +390,4 @@ export default function ApplicationsList() {
       </main>
     </div>
   );
-} 
+});
