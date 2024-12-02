@@ -3,13 +3,15 @@ import { useState, useEffect } from 'react';
 interface FileUploadBoxProps {
   name: string;
   label: string;
-  description: string;
   onFileChange: (name: string, file: File) => void;
-  currentFile: File | null;
+  description?: string;
+  currentFile?: File | null;
   existingUrl?: string;
+  accept?: string;
+  required?: boolean;
 }
 
-export default function FileUploadBox({ name, label, description, onFileChange, currentFile, existingUrl }: FileUploadBoxProps) {
+export default function FileUploadBox({ name, label, description, onFileChange, currentFile, existingUrl, accept, required }: FileUploadBoxProps) {
   const [error, setError] = useState<string>('');
   const [preview, setPreview] = useState<string | null>(existingUrl || null);
 
@@ -65,14 +67,14 @@ export default function FileUploadBox({ name, label, description, onFileChange, 
           type="file"
           name={name}
           onChange={handleFileChange}
-          accept=".jpg,.jpeg,.png,.pdf"
+          accept={accept || ".jpg,.jpeg,.png,.pdf"}
+          required={required}
           className="block w-full text-sm text-gray-500
             file:mr-4 file:py-2 file:px-4
             file:rounded-md file:border-0
             file:text-sm file:font-semibold
             file:bg-indigo-50 file:text-indigo-700
             hover:file:bg-indigo-100"
-          required
         />
         {error && (
           <p className="text-sm text-red-600">{error}</p>
