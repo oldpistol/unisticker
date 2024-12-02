@@ -241,6 +241,7 @@ const EditApplication = () => {
                     id="address"
                     label="Address"
                     name="address"
+                    multiline
                     value={formData.address}
                     onChange={handleInputChange}
                     required
