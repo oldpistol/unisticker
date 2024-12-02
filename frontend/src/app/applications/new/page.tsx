@@ -14,7 +14,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import InputField from '@/components/InputField';
-import FileUploadBox from '@/components/FileUploadBox';
+import FileUploadField from '@/components/FileUploadField';
 
 interface FormData {
   // Personal Information
@@ -361,40 +361,75 @@ export default function NewApplication() {
             </div>
           </div>
 
-          {/* Documents Section */}
+          {/* Document Information Section */}
           <div className="bg-white p-6 rounded-lg shadow">
             <h2 className="text-xl font-semibold mb-6 flex items-center">
               <FileText className="h-5 w-5 mr-2" />
               Required Documents
             </h2>
-            <div className="space-y-6">
-              <FileUploadBox
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FileUploadField
+                id="roadTax"
                 label="Road Tax"
-                name="roadTax"
-                onFileChange={(name, file) => handleFileChange(name, file)}
                 accept=".pdf,.jpg,.jpeg,.png"
-                required
+                value={formData.documents.roadTax}
+                onChange={(file) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    documents: {
+                      ...prev.documents,
+                      roadTax: file
+                    }
+                  }));
+                }}
               />
-              <FileUploadBox
+
+              <FileUploadField
+                id="drivingLicenseFront"
                 label="Driving License (Front)"
-                name="drivingLicenseFront"
-                onFileChange={(name, file) => handleFileChange(name, file)}
                 accept=".pdf,.jpg,.jpeg,.png"
-                required
+                value={formData.documents.drivingLicenseFront}
+                onChange={(file) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    documents: {
+                      ...prev.documents,
+                      drivingLicenseFront: file
+                    }
+                  }));
+                }}
               />
-              <FileUploadBox
+
+              <FileUploadField
+                id="drivingLicenseBack"
                 label="Driving License (Back)"
-                name="drivingLicenseBack"
-                onFileChange={(name, file) => handleFileChange(name, file)}
                 accept=".pdf,.jpg,.jpeg,.png"
-                required
+                value={formData.documents.drivingLicenseBack}
+                onChange={(file) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    documents: {
+                      ...prev.documents,
+                      drivingLicenseBack: file
+                    }
+                  }));
+                }}
               />
-              <FileUploadBox
+
+              <FileUploadField
+                id="insuranceCoverNote"
                 label="Insurance Cover Note"
-                name="insuranceCoverNote"
-                onFileChange={(name, file) => handleFileChange(name, file)}
                 accept=".pdf,.jpg,.jpeg,.png"
-                required
+                value={formData.documents.insuranceCoverNote}
+                onChange={(file) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    documents: {
+                      ...prev.documents,
+                      insuranceCoverNote: file
+                    }
+                  }));
+                }}
               />
             </div>
           </div>
