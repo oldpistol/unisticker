@@ -29,20 +29,91 @@ client = OpenAI(
 )
 
 # System prompt template
-SYSTEM_PROMPT_TEMPLATE = """You are a concise and helpful AI Assistant for UTM (Universiti Teknologi Malaysia) vehicle sticker applications.
+SYSTEM_PROMPT_TEMPLATE = """Hi {name}! 👋
 
-Current User: {name} ({role})
-{additional_info}
+I can help you with:
+- Application process
+- Documents needed
+- Payment & collection
+- Rules
 
-Keep responses brief and direct. Focus on these topics only:
-1. Application Process
-2. Required Documents
-3. Application Status
-4. Sticker Collection
+Ask me anything about UTM vehicle sticker application."""
 
-For other topics, reply: "I can only help with UTM vehicle sticker applications. Please contact UTM directly for other matters."
+# Load and parse guide content
+def load_guide_content():
+    try:
+        with open("../docs/sticker_application_guide.md", "r", encoding='utf-8') as f:
+            return f.read()
+    except Exception as e:
+        print(f"Error loading guide: {e}")
+        return ""
 
-Always maintain a professional but concise tone."""
+def parse_guide_sections(content):
+    sections = {}
+    current_section = ""
+    current_content = []
+    
+    for line in content.split('\n'):
+        if line.startswith('##'):
+            if current_section:
+                sections[current_section] = '\n'.join(current_content).strip()
+            current_section = line.strip('# ')
+            current_content = []
+        else:
+            current_content.append(line)
+    
+    if current_section:
+        sections[current_section] = '\n'.join(current_content).strip()
+    
+    return sections
+
+def find_relevant_content(query, sections):
+    query = query.lower()
+    
+    # Define topic mappings
+    topic_keywords = {
+        "document": ["Before You Begin", "Important Notes"],
+        "requirement": ["Before You Begin"],
+        "apply": ["Application Steps"],
+        "step": ["Application Steps"],
+        "process": ["Application Steps"],
+        "payment": ["Payment"],
+        "collect": ["Sticker Collection"],
+        "rule": ["Sticker Rules and Regulations"],
+        "regulation": ["Sticker Rules and Regulations"],
+        "help": ["Need Help?"],
+        "support": ["Need Help?"],
+        "contact": ["Need Help?"]
+    }
+    
+    relevant_sections = set()
+    
+    # Find matching sections based on keywords
+    for keyword, section_names in topic_keywords.items():
+        if keyword in query:
+            for section in section_names:
+                if section in sections:
+                    relevant_sections.add(section)
+    
+    # If no matches found, try to find sections containing words from the query
+    if not relevant_sections:
+        query_words = set(query.split())
+        for section_name, content in sections.items():
+            if any(word in content.lower() for word in query_words):
+                relevant_sections.add(section_name)
+    
+    # Format the response
+    if relevant_sections:
+        response_parts = []
+        for section in relevant_sections:
+            response_parts.append(f"## {section}\n{sections[section]}")
+        return "\n\n".join(response_parts)
+    
+    return ""
+
+# Load guide content at startup
+GUIDE_CONTENT = load_guide_content()
+GUIDE_SECTIONS = parse_guide_sections(GUIDE_CONTENT)
 
 class ConnectionManager:
     def __init__(self):
@@ -166,11 +237,22 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
                 
                 print("Using system prompt:", system_prompt)  # Debug print
                 
-                messages = [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": data["message"]}
-                ]
+                # First, check if there's relevant content from the guide
+                guide_content = find_relevant_content(data["message"], GUIDE_SECTIONS)
                 
+                # If guide content exists, use it as context for the AI
+                if guide_content:
+                    messages = [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "system", "content": f"Use this information to answer the question:\n\n{guide_content}"},
+                        {"role": "user", "content": data["message"]}
+                    ]
+                else:
+                    messages = [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": data["message"]}
+                    ]
+
                 try:
                     # Stream the response
                     stream = client.chat.completions.create(

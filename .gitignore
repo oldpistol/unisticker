@@ -48,6 +48,20 @@
 /frontend/.vercel
 /frontend/next-env.d.ts
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
 # IDE and Editor files
 .idea
 .vscode
