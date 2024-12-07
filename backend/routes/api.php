@@ -10,6 +10,8 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\StickerApplication\CreateController;
+use App\Http\Controllers\StickerApplication\IndexController;
 use Illuminate\Support\Facades\Route;
 
 // User Auth Routes
@@ -34,4 +36,10 @@ Route::group(['prefix' => 'admin/auth'], function () {
         Route::post('/logout', AdminLogoutController::class);
         Route::get('/check', AdminCheckController::class);
     });
+});
+
+// Sticker Application Routes
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/sticker-applications', IndexController::class);
+    Route::post('/sticker-applications', CreateController::class);
 });

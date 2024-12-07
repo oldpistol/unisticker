@@ -13,6 +13,10 @@ class AdminSeeder extends Seeder
      */
     public function run(): void
     {
+        if (Admin::count() > 0) {
+            return;
+        }
+        
         Admin::create([
             'name' => 'Super Admin',
             'email' => 'admin@utm.my',
