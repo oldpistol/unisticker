@@ -23,22 +23,19 @@ import {
 import MenuBar from '@/components/MenuBar';
 import { getActiveMenuItems } from '@/utils/navigation';
 import FileUploadField from '@/components/FileUploadField';
+import { getApplication } from '@/services/applicationService';
 
 interface ApplicationDetail {
   studentName: string;
   studentId: string;
   email: string;
   phoneNumber: string;
-  faculty: string;
-  address: string;
-  drivingLicenseNo: string;
   vehicleNo: string;
   vehicleType: string;
   vehicleBrand: string;
   vehicleModel: string;
   vehicleColor: string;
-  isVehicleOwner: boolean;
-  ownerFullName: string;
+  drivingLicenseNo: string;
   roadTaxExpiryDate: string;
   insuranceName: string;
   insuranceNumber: string;
@@ -83,38 +80,39 @@ const ApplicationDetail = () => {
   useEffect(() => {
     const fetchApplication = async () => {
       try {
-        // Using dummy data for development
-        const dummyData = {
-          studentName: "John Doe",
-          studentId: "A123456",
-          email: "john.doe@example.com",
-          phoneNumber: "+60123456789",
-          faculty: "Faculty of Engineering",
-          address: "123 Student Housing, University Road",
-          drivingLicenseNo: "ABC123456",
-          vehicleNo: "ABC 1234",
-          vehicleType: "Car",
-          vehicleBrand: "Toyota",
-          vehicleModel: "Corolla",
-          vehicleColor: "Silver",
-          isVehicleOwner: true,
-          ownerFullName: "John Doe",
-          roadTaxExpiryDate: "2024-12-31",
-          insuranceName: "AXA Insurance",
-          insuranceNumber: "INS123456",
-          status: "Pending",
-          documents: [
-            { type: "Road Tax", url: "/dummy/road-tax.pdf" },
-            { type: "License Front", url: "/dummy/license-front.pdf" },
-            { type: "License Back", url: "/dummy/license-back.pdf" },
-            { type: "Insurance", url: "/dummy/insurance.pdf" }
-          ],
+        const response = await getApplication(Number(params.id));
+        console.log('API Response:', response);
+        
+        // Transform API response to match our interface
+        const transformedData: ApplicationDetail = {
+          studentName: response.user.name,
+          studentId: response.user.id.toString(),
+          email: response.user.email,
+          phoneNumber: response.user.phone_no || '', 
+          vehicleNo: response.vehicle.plate_no,
+          vehicleType: response.vehicle.type,
+          vehicleBrand: response.vehicle.brand,
+          vehicleModel: response.vehicle.model,
+          vehicleColor: response.vehicle.color,
+          drivingLicenseNo: response.vehicle.driving_license_no,
+          roadTaxExpiryDate: response.vehicle.road_tax_expiry_date,
+          insuranceName: response.vehicle.insurance_name,
+          insuranceNumber: response.vehicle.insurance_number,
+          status: response.status,
+          documents: response.documents?.map(doc => ({
+            type: doc.type,
+            url: doc.file_path
+          })) || [],
           timeline: [
-            { status: "Submitted", date: "2024-01-15", comment: "Application received" },
-            { status: "Under Review", date: "2024-01-16", comment: "Application is being reviewed" }
+            {
+              status: response.status,
+              date: response.application_date,
+              comment: response.remarks || undefined
+            }
           ]
         };
-        setApplication(dummyData);
+        
+        setApplication(transformedData);
       } catch (error) {
         console.error('Error fetching application:', error);
       } finally {
@@ -206,7 +204,7 @@ const ApplicationDetail = () => {
                   <p className="mt-1 font-medium text-gray-900">{application.studentName}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Matric Number</p>
+                  <p className="text-sm text-gray-500">User ID</p>
                   <p className="mt-1 font-medium text-gray-900">{application.studentId}</p>
                 </div>
                 <div>
@@ -218,16 +216,8 @@ const ApplicationDetail = () => {
                   <p className="mt-1 font-medium text-gray-900">{application.phoneNumber}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Faculty</p>
-                  <p className="mt-1 font-medium text-gray-900">{application.faculty}</p>
-                </div>
-                <div>
                   <p className="text-sm text-gray-500">Driving License No.</p>
                   <p className="mt-1 font-medium text-gray-900">{application.drivingLicenseNo}</p>
-                </div>
-                <div className="col-span-2">
-                  <p className="text-sm text-gray-500">Address</p>
-                  <p className="mt-1 font-medium text-gray-900">{application.address}</p>
                 </div>
               </div>
             </div>
@@ -258,12 +248,6 @@ const ApplicationDetail = () => {
                 <div>
                   <p className="text-sm text-gray-500">Vehicle Color</p>
                   <p className="mt-1 font-medium text-gray-900">{application.vehicleColor}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Vehicle Owner</p>
-                  <p className="mt-1 font-medium text-gray-900">
-                    {application.isVehicleOwner ? 'Self' : application.ownerFullName}
-                  </p>
                 </div>
               </div>
             </div>

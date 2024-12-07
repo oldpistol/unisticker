@@ -20,6 +20,7 @@ import { useRouter } from 'next/navigation';
 import { getCurrentUser } from '@/services/userService';
 import { toast } from 'sonner';
 import withAuth from '@/middleware/withAuth'; // Import withAuth HOC
+import { getVehicleBrandModels, type VehicleBrandModels } from '@/services/vehicleService';
 
 interface FormData {
   fullName: string
@@ -38,6 +39,7 @@ interface FormData {
   roadTaxExpiryDate: string
   insuranceName: string
   insuranceNumber: string
+  vehicle_brand_model_id: number
   documents: {
     roadTax: File | null;
     drivingLicenseFront: File | null;
@@ -86,6 +88,7 @@ function NewApplication() {
     roadTaxExpiryDate: '',
     insuranceName: '',
     insuranceNumber: '',
+    vehicle_brand_model_id: 0,
     documents: {
       roadTax: null,
       drivingLicenseFront: null,
@@ -95,9 +98,10 @@ function NewApplication() {
   });
 
   const vehicleTypes = ['Car', 'Motorcycle', 'Van', 'Others'];
-  const vehicleBrands = ['Toyota', 'Honda', 'Proton', 'Perodua', 'Others'];
-  const vehicleModels = ['Vios', 'Civic', 'Saga', 'Myvi', 'Others']; // This should be dynamic based on brand
   const insuranceCompanies = ['Etiqa', 'Allianz', 'AIG', 'Zurich', 'Others'];
+
+  const [vehicleBrandModels, setVehicleBrandModels] = useState<VehicleBrandModels>({});
+  const [selectedBrand, setSelectedBrand] = useState<string>('');
 
   const [errors, setErrors] = useState<{
     [key in keyof FormData]?: string;
@@ -133,6 +137,20 @@ function NewApplication() {
     };
 
     fetchUserData();
+  }, []);
+
+  useEffect(() => {
+    const fetchVehicleBrandModels = async () => {
+      try {
+        const data = await getVehicleBrandModels();
+        setVehicleBrandModels(data);
+      } catch (error) {
+        console.error('Error fetching vehicle brands and models:', error);
+        toast.error('Failed to load vehicle brands and models');
+      }
+    };
+
+    fetchVehicleBrandModels();
   }, []);
 
   if (isLoading) {
@@ -228,15 +246,15 @@ function NewApplication() {
 
       // Prepare documents array
       const documents: { file: File; type: string }[] = [
-        { file: formData.documents.roadTax!, type: 'road_tax' },
-        { file: formData.documents.drivingLicenseFront!, type: 'driving_license_front' },
-        { file: formData.documents.drivingLicenseBack!, type: 'driving_license_back' },
-        { file: formData.documents.insuranceCoverNote!, type: 'insurance_cover_note' }
+        { file: formData.documents.roadTax!, type: 'Road Tax' },
+        { file: formData.documents.drivingLicenseFront!, type: 'Driving License Front' },
+        { file: formData.documents.drivingLicenseBack!, type: 'Driving License Back' },
+        { file: formData.documents.insuranceCoverNote!, type: 'Insurance Cover Note' }
       ].filter((doc): doc is { file: File; type: string } => doc.file !== null);
 
       // Prepare request data
       const requestData: StickerApplicationRequest = {
-        vehicle_brand_model_id: 1, // TODO: Get this from the selected brand and model
+        vehicle_brand_model_id: formData.vehicle_brand_model_id,
         vehicle_plate_no: formData.vehiclePlateNo,
         vehicle_type: formData.vehicleType,
         vehicle_color: formData.vehicleColor,
@@ -376,28 +394,59 @@ function NewApplication() {
                 options={vehicleTypes}
                 required
               />
-              <InputField
-                label="Vehicle Brand"
-                name="vehicleBrand"
-                id="vehicleBrand"
-                type="select"
-                value={formData.vehicleBrand}
-                onChange={(e) => handleInputChange('vehicleBrand', e.target.value)}
-                error={errors.vehicleBrand}
-                options={vehicleBrands}
-                required
-              />
-              <InputField
-                label="Vehicle Model"
-                name="vehicleModel"
-                id="vehicleModel"
-                type="select"
-                value={formData.vehicleModel}
-                onChange={(e) => handleInputChange('vehicleModel', e.target.value)}
-                error={errors.vehicleModel}
-                options={vehicleModels}
-                required
-              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Vehicle Brand
+                </label>
+                <select
+                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                  value={selectedBrand}
+                  onChange={(e) => {
+                    setSelectedBrand(e.target.value);
+                    setFormData(prev => ({
+                      ...prev,
+                      vehicleBrand: e.target.value,
+                      vehicleModel: '',
+                      vehicle_brand_model_id: 0
+                    }));
+                  }}
+                >
+                  <option value="">Select Brand</option>
+                  {Object.keys(vehicleBrandModels).map((brand) => (
+                    <option key={brand} value={brand}>
+                      {brand}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Vehicle Model
+                </label>
+                <select
+                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                  value={formData.vehicle_brand_model_id || ''}
+                  onChange={(e) => {
+                    const modelId = parseInt(e.target.value);
+                    const model = selectedBrand && vehicleBrandModels[selectedBrand]?.models.find(m => m.id === modelId);
+                    setFormData(prev => ({
+                      ...prev,
+                      vehicleModel: model ? model.name : '',
+                      vehicle_brand_model_id: modelId
+                    }));
+                  }}
+                  disabled={!selectedBrand}
+                >
+                  <option value="">Select Model</option>
+                  {selectedBrand &&
+                    vehicleBrandModels[selectedBrand]?.models.map((model) => (
+                      <option key={model.id} value={model.id}>
+                        {model.name}
+                      </option>
+                    ))}
+                </select>
+              </div>
               <InputField
                 label="Vehicle Color"
                 name="vehicleColor"

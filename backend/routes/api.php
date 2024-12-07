@@ -13,6 +13,8 @@ use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Auth\UserController;
 use App\Http\Controllers\StickerApplication\CreateController;
 use App\Http\Controllers\StickerApplication\IndexController;
+use App\Http\Controllers\StickerApplication\ShowController;
+use App\Http\Controllers\VehicleBrandModel\IndexController as VehicleBrandModelIndexController;
 use Illuminate\Support\Facades\Route;
 
 // User Auth Routes
@@ -43,5 +45,9 @@ Route::group(['prefix' => 'admin/auth'], function () {
 // Sticker Application Routes
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/sticker-applications', IndexController::class);
+    Route::get('/sticker-applications/{id}', ShowController::class);
     Route::post('/sticker-applications', CreateController::class);
 });
+
+// Vehicle Brand Models
+Route::get('/vehicle-brand-models', VehicleBrandModelIndexController::class);
