@@ -89,8 +89,6 @@ test('user can list their sticker applications', function () {
             'meta'
         ]);
 
-    dd($response->json());
-
     // Verify only user's applications are returned
     $applications = $response->json('data');
     foreach ($applications as $application) {
