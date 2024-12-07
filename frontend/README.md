@@ -1,36 +1,83 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# UniSticker Frontend
 
-## Getting Started
+Next.js frontend for the UTM Vehicle Sticker Application System with integrated chat assistance.
 
-First, run the development server:
+## Features
 
+- Modern UI built with Next.js and TypeScript
+- Real-time chat assistance using WebSocket
+- Responsive design for all devices
+- Secure authentication integration with backend
+
+## Prerequisites
+
+- Node.js 18.x or higher
+- npm or yarn package manager
+- Backend server running (Laravel)
+- Chat service running (Python WebSocket)
+
+## Setup
+
+1. Install dependencies:
+```bash
+npm install
+# or
+yarn install
+```
+
+2. Configure environment variables:
+- Copy `.env.example` to `.env.local`:
+```bash
+cp .env.example .env.local
+```
+- Update the following variables:
+  - `NEXT_PUBLIC_API_URL`: Backend API URL (default: 'http://localhost:8000/api')
+  - `NEXT_PUBLIC_WS_URL`: WebSocket URL (default: 'ws://localhost:8080')
+
+3. Run development server:
 ```bash
 npm run dev
 # or
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The application will be available at `http://localhost:3000`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Available Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `npm run dev`: Start development server
+- `npm run build`: Build for production
+- `npm run start`: Start production server
+- `npm run lint`: Run ESLint
+- `npm run type-check`: Run TypeScript compiler check
 
-## Learn More
+## Project Structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+frontend/
+├── src/
+│   ├── app/          # App router pages
+│   ├── components/   # Reusable components
+│   ├── lib/          # Utilities and helpers
+│   └── styles/       # Global styles
+├── public/           # Static files
+└── .env.example      # Environment variables template
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Environment Variables
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Variable | Description | Default |
+|----------|-------------|---------|
+| NEXT_PUBLIC_API_URL | Backend API endpoint | http://localhost:8000/api |
+| NEXT_PUBLIC_WS_URL | WebSocket server URL | ws://localhost:8080 |
 
-## Deploy on Vercel
+## Contributing
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Follow the existing code style
+2. Write clear commit messages
+3. Test your changes before submitting
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Related Services
+
+- Backend API: Laravel service at `http://localhost:8000`
+- Chat Service: Python WebSocket at `ws://localhost:8080`

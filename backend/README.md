@@ -1,66 +1,141 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# UniSticker Backend
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Laravel backend API for the UTM Vehicle Sticker Application System.
 
-## About Laravel
+## Features
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- RESTful API endpoints for vehicle sticker applications
+- Google OAuth authentication
+- Database management for user and application data
+- Secure file storage for documents
+- API integration with frontend
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Prerequisites
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- PHP 8.1 or higher
+- Composer
+- MySQL/MariaDB
+- Google OAuth credentials
+- SQLite (for testing)
 
-## Learning Laravel
+## Setup
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+1. Install dependencies:
+```bash
+composer install
+```
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+2. Configure environment:
+- Copy `.env.example` to `.env`:
+```bash
+cp .env.example .env
+```
+- Generate application key:
+```bash
+php artisan key:generate
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+3. Configure database:
+- Update database credentials in `.env`
+- Run migrations:
+```bash
+php artisan migrate
+```
+- (Optional) Seed database:
+```bash
+php artisan db:seed
+```
 
-## Laravel Sponsors
+4. Configure Google OAuth:
+- Add credentials to `.env`:
+  ```
+  GOOGLE_CLIENT_ID=your_client_id
+  GOOGLE_CLIENT_SECRET=your_client_secret
+  GOOGLE_REDIRECT_URI="${APP_URL}/api/auth/google/callback"
+  ```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+5. Configure frontend URL:
+```
+SANCTUM_STATEFUL_DOMAINS=localhost:3000
+FRONTEND_URL=http://localhost:3000
+```
 
-### Premium Partners
+6. Start development server:
+```bash
+php artisan serve
+```
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+The API will be available at `http://localhost:8000`
+
+## Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| APP_NAME | Application name | Laravel |
+| APP_ENV | Environment | local |
+| APP_KEY | Application key | Generated |
+| DB_CONNECTION | Database type | sqlite |
+| GOOGLE_CLIENT_ID | Google OAuth client ID | - |
+| GOOGLE_CLIENT_SECRET | Google OAuth client secret | - |
+| FRONTEND_URL | Frontend application URL | http://localhost:3000 |
+
+## API Endpoints
+
+### Authentication
+- `GET /api/auth/check`: Check authentication status
+- `POST /api/auth/login`: Login with credentials
+- `POST /api/auth/register`: Register new user
+- `POST /api/auth/logout`: Logout user
+- `GET /api/auth/google`: Initiate Google OAuth
+- `GET /api/auth/google/callback`: Google OAuth callback
+- `POST /api/auth/forgot-password`: Request password reset
+- `POST /api/auth/reset-password`: Reset password
+- `GET /api/auth/user`: Get current user info
+
+### Admin
+- `GET /api/admin/auth/check`: Check admin status
+- `POST /api/admin/auth/login`: Admin login
+- `POST /api/admin/auth/logout`: Admin logout
+
+### Sticker Applications
+- `GET /api/sticker-applications`: List all applications
+- `POST /api/sticker-applications`: Submit new application
+- `GET /api/sticker-applications/{id}`: Get specific application
+
+### Vehicle Information
+- `GET /api/vehicle-brand-models`: Get list of vehicle brands and models
+
+### Documents
+- `GET /api/documents/{document}`: View specific document
+
+## Testing
+
+Run tests with:
+```bash
+php artisan test
+```
+
+For specific test suite:
+```bash
+php artisan test --testsuite=Feature
+```
+
+## Commands
+
+- `php artisan serve`: Start development server
+- `php artisan migrate`: Run database migrations
+- `php artisan db:seed`: Seed database
+- `php artisan route:list`: List all routes
+- `php artisan cache:clear`: Clear application cache
 
 ## Contributing
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+1. Follow Laravel coding standards
+2. Write tests for new features
+3. Update documentation as needed
+4. Use feature branches for changes
 
-## Code of Conduct
+## Related Services
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+- Frontend: Next.js application at `http://localhost:3000`
+- Chat Service: Python WebSocket at `ws://localhost:8080`
