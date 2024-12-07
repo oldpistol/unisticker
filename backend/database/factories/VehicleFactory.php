@@ -23,7 +23,7 @@ class VehicleFactory extends Factory
 
         return [
             'user_id' => User::factory(),
-            'vehicle_brand_model_id' => VehicleBrandModel::factory(),
+            'vehicle_brand_model_id' => VehicleBrandModel::inRandomOrder()->first()->id,
             'vehicle_plate_no' => strtoupper(fake()->randomLetter() . fake()->randomLetter() . fake()->randomLetter()) 
                 . ' ' 
                 . fake()->numberBetween(1000, 9999),

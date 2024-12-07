@@ -9,7 +9,7 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['var(--font-poppins)'], // This integrates with Next.js font loading
+        sans: ['Poppins', 'sans-serif'], // Using Poppins directly
       },
     },
   },

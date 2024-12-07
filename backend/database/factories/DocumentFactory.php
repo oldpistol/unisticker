@@ -42,6 +42,11 @@ class DocumentFactory extends Factory
         return $this->afterMaking(function ($document) {
             // Nothing to do after making
         })->afterCreating(function ($document) {
+            // Skip file creation in test environment
+            if (app()->environment('testing')) {
+                return;
+            }
+            
             // Create a fake file in storage when the document is created
             Storage::fake('public');
             Storage::disk('public')->put(
