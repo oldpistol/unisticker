@@ -35,7 +35,7 @@ class CreateApplicationRequest extends FormRequest
             
             // Document validation
             'documents' => 'required|array',
-            'documents.*.file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            'documents.*.file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'documents.*.type' => ['required', new Enum(DocumentType::class)],
         ];
     }

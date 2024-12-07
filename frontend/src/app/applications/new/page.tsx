@@ -22,35 +22,43 @@ import { toast } from 'sonner';
 import withAuth from '@/middleware/withAuth'; // Import withAuth HOC
 
 interface FormData {
-  // Personal Information
-  fullName: string;
-  matricNo: string;
-  email: string;
-  phoneNumber: string;
-  address: string;
-  drivingLicenseNo: string;
-
-  // Vehicle Information
-  vehiclePlateNo: string;
-  vehicleType: string;
-  vehicleBrand: string;
-  vehicleModel: string;
-  vehicleColor: string;
-  isVehicleOwner: boolean;
-  ownerFullName: string;
-
-  // Additional Information
-  roadTaxExpiryDate: string;
-  insuranceName: string;
-  insuranceNumber: string;
-
-  // Documents
+  fullName: string
+  matricNo: string
+  email: string
+  phoneNumber: string
+  address: string
+  drivingLicenseNo: string
+  vehiclePlateNo: string
+  vehicleType: string
+  vehicleBrand: string
+  vehicleModel: string
+  vehicleColor: string
+  isVehicleOwner: boolean
+  ownerFullName: string
+  roadTaxExpiryDate: string
+  insuranceName: string
+  insuranceNumber: string
   documents: {
     roadTax: File | null;
     drivingLicenseFront: File | null;
     drivingLicenseBack: File | null;
     insuranceCoverNote: File | null;
-  };
+  }
+}
+
+interface StickerApplicationRequest {
+  vehicle_brand_model_id: number;
+  vehicle_plate_no: string;
+  vehicle_type: string;
+  vehicle_color: string;
+  road_tax_expiry_date: string;
+  insurance_name: string;
+  insurance_number: string;
+  driving_license_no: string;
+  documents: {
+    file: File;
+    type: string;
+  }[];
 }
 
 export default withAuth(NewApplication); // Apply withAuth HOC to NewApplication page
@@ -59,17 +67,15 @@ function NewApplication() {
   const pathname = usePathname();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState<FormData>({
-    // Personal Information
     fullName: '',
     matricNo: '',
     email: '',
     phoneNumber: '',
     address: '',
     drivingLicenseNo: '',
-
-    // Vehicle Information
     vehiclePlateNo: '',
     vehicleType: '',
     vehicleBrand: '',
@@ -77,13 +83,9 @@ function NewApplication() {
     vehicleColor: '',
     isVehicleOwner: true,
     ownerFullName: '',
-
-    // Additional Information
     roadTaxExpiryDate: '',
     insuranceName: '',
     insuranceNumber: '',
-
-    // Documents
     documents: {
       roadTax: null,
       drivingLicenseFront: null,
@@ -97,7 +99,16 @@ function NewApplication() {
   const vehicleModels = ['Vios', 'Civic', 'Saga', 'Myvi', 'Others']; // This should be dynamic based on brand
   const insuranceCompanies = ['Etiqa', 'Allianz', 'AIG', 'Zurich', 'Others'];
 
-  const [errors, setErrors] = useState<Partial<FormData>>({});
+  const [errors, setErrors] = useState<{
+    [key in keyof FormData]?: string;
+  } & {
+    documents?: {
+      roadTax?: string;
+      drivingLicenseFront?: string;
+      drivingLicenseBack?: string;
+      insuranceCoverNote?: string;
+    }
+  }>({});
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   useEffect(() => {
@@ -141,51 +152,91 @@ function NewApplication() {
     }));
   };
 
-  const handleFileChange = (name: string, file: File) => {
+  const handleFileChange = (
+    fieldName: keyof typeof formData.documents, 
+    file: File | null
+  ) => {
     setFormData(prev => ({
       ...prev,
       documents: {
         ...prev.documents,
-        [name]: file,
-      },
+        [fieldName]: file
+      }
     }));
   };
 
-  const validateForm = () => {
-    let formErrors: Partial<FormData> = {};
-    
-    if (!formData.fullName) formErrors.fullName = 'Full name is required';
-    if (!formData.matricNo) formErrors.matricNo = 'Matric number is required';
-    if (!formData.email) formErrors.email = 'Email is required';
-    if (!formData.phoneNumber) formErrors.phoneNumber = 'Phone number is required';
-    if (!formData.address) formErrors.address = 'Address is required';
-    if (!formData.drivingLicenseNo) formErrors.drivingLicenseNo = 'Driving license number is required';
-
-    if (!formData.vehiclePlateNo) formErrors.vehiclePlateNo = 'Vehicle plate number is required';
-    if (!formData.vehicleType) formErrors.vehicleType = 'Vehicle type is required';
-    if (!formData.vehicleBrand) formErrors.vehicleBrand = 'Vehicle brand is required';
-    if (!formData.vehicleModel) formErrors.vehicleModel = 'Vehicle model is required';
-    if (!formData.vehicleColor) formErrors.vehicleColor = 'Vehicle color is required';
-
-    if (!formData.roadTaxExpiryDate) formErrors.roadTaxExpiryDate = 'Road tax expiry date is required';
-    if (!formData.insuranceName) formErrors.insuranceName = 'Insurance name is required';
-    if (!formData.insuranceNumber) formErrors.insuranceNumber = 'Insurance number is required';
-
-    setErrors(formErrors);
-    return Object.keys(formErrors).length === 0;
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateForm()) {
-      setShowConfirmModal(true);
-    }
-  };
-
-  const handleConfirmSubmit = async () => {
     try {
-      const applicationData = {
-        vehicle_brand_model_id: parseInt(formData.vehicleBrand), // You'll need to update this to use actual brand model ID
+      setIsSubmitting(true);
+      
+      // Validate required fields
+      const requiredFields: (keyof FormData)[] = [
+        'fullName',
+        'matricNo',
+        'email',
+        'phoneNumber',
+        'address',
+        'drivingLicenseNo',
+        'vehiclePlateNo',
+        'vehicleType',
+        'vehicleBrand',
+        'vehicleModel',
+        'vehicleColor',
+        'roadTaxExpiryDate',
+        'insuranceName',
+        'insuranceNumber'
+      ];
+
+      const requiredDocuments = [
+        'roadTax',
+        'drivingLicenseFront',
+        'drivingLicenseBack',
+        'insuranceCoverNote'
+      ] as const;
+
+      const errors: { 
+        [key: string]: string 
+      } = {};
+      
+      const requiredDocumentsErrors: { [key: string]: string } = {};
+
+      requiredFields.forEach(field => {
+        if (!formData[field as keyof FormData]) {
+          errors[field as keyof FormData] = 'This field is required';
+        }
+      });
+
+      requiredDocuments.forEach(doc => {
+        const docKey = doc as keyof typeof formData.documents;
+        if (!formData.documents[docKey] || !(formData.documents[docKey] instanceof File)) {
+          requiredDocumentsErrors[doc] = 'This document is required';
+        }
+      });
+
+      if (Object.keys(errors).length > 0 || Object.keys(requiredDocumentsErrors).length > 0) {
+        setErrors(prevErrors => {
+          const newErrors = { ...prevErrors, ...errors };
+          if (Object.keys(requiredDocumentsErrors).length > 0) {
+            (newErrors as any).documents = requiredDocumentsErrors;
+          }
+          return newErrors;
+        });
+        toast.error('Please fill in all required fields');
+        return;
+      }
+
+      // Prepare documents array
+      const documents: { file: File; type: string }[] = [
+        { file: formData.documents.roadTax!, type: 'road_tax' },
+        { file: formData.documents.drivingLicenseFront!, type: 'driving_license_front' },
+        { file: formData.documents.drivingLicenseBack!, type: 'driving_license_back' },
+        { file: formData.documents.insuranceCoverNote!, type: 'insurance_cover_note' }
+      ].filter((doc): doc is { file: File; type: string } => doc.file !== null);
+
+      // Prepare request data
+      const requestData: StickerApplicationRequest = {
+        vehicle_brand_model_id: 1, // TODO: Get this from the selected brand and model
         vehicle_plate_no: formData.vehiclePlateNo,
         vehicle_type: formData.vehicleType,
         vehicle_color: formData.vehicleColor,
@@ -193,31 +244,20 @@ function NewApplication() {
         insurance_name: formData.insuranceName,
         insurance_number: formData.insuranceNumber,
         driving_license_no: formData.drivingLicenseNo,
-        documents: [
-          {
-            file: formData.documents.roadTax!,
-            type: 'road_tax'
-          },
-          {
-            file: formData.documents.drivingLicenseFront!,
-            type: 'driving_license_front'
-          },
-          {
-            file: formData.documents.drivingLicenseBack!,
-            type: 'driving_license_back'
-          },
-          {
-            file: formData.documents.insuranceCoverNote!,
-            type: 'insurance_cover_note'
-          }
-        ].filter(doc => doc.file !== null)
+        documents: documents
       };
 
-      await createStickerApplication(applicationData);
+      console.log('Submitting application:', requestData);
+      const response = await createStickerApplication(requestData);
+      console.log('Application submitted:', response);
+
+      toast.success('Application submitted successfully');
       router.push('/applications');
     } catch (error) {
       console.error('Error submitting application:', error);
-      // Handle error (show error message to user)
+      toast.error('Failed to submit application. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -449,7 +489,8 @@ function NewApplication() {
                 label="Road Tax"
                 accept=".pdf,.jpg,.jpeg,.png"
                 value={formData.documents.roadTax}
-                onChange={(file) => handleFileChange('roadTax', file)}
+                onChange={(file: File | null) => handleFileChange('roadTax', file)}
+                error={errors.documents?.roadTax}
               />
 
               <FileUploadField
@@ -457,7 +498,8 @@ function NewApplication() {
                 label="Driving License (Front)"
                 accept=".pdf,.jpg,.jpeg,.png"
                 value={formData.documents.drivingLicenseFront}
-                onChange={(file) => handleFileChange('drivingLicenseFront', file)}
+                onChange={(file: File | null) => handleFileChange('drivingLicenseFront', file)}
+                error={errors.documents?.drivingLicenseFront}
               />
 
               <FileUploadField
@@ -465,7 +507,8 @@ function NewApplication() {
                 label="Driving License (Back)"
                 accept=".pdf,.jpg,.jpeg,.png"
                 value={formData.documents.drivingLicenseBack}
-                onChange={(file) => handleFileChange('drivingLicenseBack', file)}
+                onChange={(file: File | null) => handleFileChange('drivingLicenseBack', file)}
+                error={errors.documents?.drivingLicenseBack}
               />
 
               <FileUploadField
@@ -473,7 +516,8 @@ function NewApplication() {
                 label="Insurance Cover Note"
                 accept=".pdf,.jpg,.jpeg,.png"
                 value={formData.documents.insuranceCoverNote}
-                onChange={(file) => handleFileChange('insuranceCoverNote', file)}
+                onChange={(file: File | null) => handleFileChange('insuranceCoverNote', file)}
+                error={errors.documents?.insuranceCoverNote}
               />
             </div>
           </div>
@@ -487,9 +531,12 @@ function NewApplication() {
             </Link>
             <button
               type="submit"
-              className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+              disabled={isSubmitting}
+              className={`rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 ${
+                isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
             >
-              Submit Application
+              {isSubmitting ? 'Submitting...' : 'Submit'}
             </button>
           </div>
         </form>

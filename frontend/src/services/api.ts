@@ -6,6 +6,8 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
   withCredentials: true, // Enable sending cookies with requests
+  maxContentLength: Infinity, // Allow large file uploads
+  maxBodyLength: Infinity,
 });
 
 // Request interceptor for adding auth token

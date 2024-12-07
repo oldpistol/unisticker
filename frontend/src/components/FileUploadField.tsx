@@ -10,8 +10,8 @@ interface FileUploadFieldProps {
   value?: File | null;
   onChange: (file: File | null) => void;
   name?: string;
-  currentFile?: string | null;
-  error?: File | null | undefined;
+  currentFile?: File | string | null;
+  error?: string;
   required?: boolean;
 }
 
@@ -32,6 +32,16 @@ export default function FileUploadField({
     onChange(null);
   };
 
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB limit
+
+  const validateAndHandleFile = (file: File | null) => {
+    if (file && file.size > MAX_FILE_SIZE) {
+      alert('File size exceeds 10MB limit. Please choose a smaller file.');
+      return;
+    }
+    onChange(file);
+  };
+
   const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
@@ -46,7 +56,7 @@ export default function FileUploadField({
       const file = files[0];
       // Check if the file type is accepted
       if (accept && accept.split(',').some(type => file.type.match(type.replace('.*', '').replace('.', '')))) {
-        onChange(file);
+        validateAndHandleFile(file);
       }
     }
   }, [accept, onChange]);
@@ -65,8 +75,8 @@ export default function FileUploadField({
           id={id || name}
           accept={accept}
           onChange={(e) => {
-            const file = e.target.files?.[0];
-            onChange(file || null);
+            const file = e.target.files?.[0] || null;
+            validateAndHandleFile(file);
           }}
           className="hidden"
         />
@@ -107,7 +117,7 @@ export default function FileUploadField({
                   <X className="h-4 w-4 text-gray-600" />
                 </button>
                 <div className="absolute bottom-0 inset-x-0 bg-gray-50 px-4 py-2 z-10">
-                  <p className="text-sm text-gray-500 truncate">{value?.name || currentFile}</p>
+                  <p className="text-sm text-gray-500 truncate">{value?.name || (typeof currentFile === 'string' ? currentFile : currentFile?.name)}</p>
                 </div>
               </div>
             ) : (
