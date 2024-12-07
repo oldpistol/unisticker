@@ -5,6 +5,7 @@ import { useParams, useRouter, usePathname } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
 import withAuth from '@/middleware/withAuth';
+import Image from 'next/image';
 import { 
   ArrowLeft,
   User,
@@ -18,7 +19,9 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  X as XIcon,
+  Download
 } from 'lucide-react';
 import MenuBar from '@/components/MenuBar';
 import { getActiveMenuItems } from '@/utils/navigation';
@@ -40,7 +43,7 @@ interface ApplicationDetail {
   insuranceName: string;
   insuranceNumber: string;
   status: string;
-  documents: Array<{ type: string; url: string }>;
+  documents: Array<{ type: string; name: string; url: string }>;
   timeline: Array<{ status: string; date: string; comment?: string }>;
 }
 
@@ -76,6 +79,7 @@ const ApplicationDetail = () => {
   const pathname = usePathname();
   const [application, setApplication] = useState<ApplicationDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchApplication = async () => {
@@ -101,7 +105,8 @@ const ApplicationDetail = () => {
           status: response.status,
           documents: response.documents?.map(doc => ({
             type: doc.type,
-            url: doc.file_path
+            name: doc.name,
+            url: doc.url  // Use the complete URL from the backend
           })) || [],
           timeline: [
             {
@@ -286,14 +291,33 @@ const ApplicationDetail = () => {
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
                       <FileText className="h-12 w-12 text-gray-400" />
                       <span className="mt-2 text-sm font-medium text-gray-900">{doc.type}</span>
-                      <a
-                        href={doc.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-2 inline-flex items-center px-3 py-1.5 text-sm text-indigo-600 bg-indigo-50 rounded-full hover:bg-indigo-100 transition-colors"
-                      >
-                        View Document
-                      </a>
+                      <span className="text-xs text-gray-500">{doc.name}</span>
+                      {doc.url.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp)$/) ? (
+                        <button
+                          onClick={() => setSelectedImage(doc.url)}
+                          className="mt-2 inline-flex items-center px-3 py-1.5 text-sm text-indigo-600 bg-indigo-50 rounded-full hover:bg-indigo-100 transition-colors"
+                        >
+                          View Image
+                        </button>
+                      ) : doc.url.toLowerCase().endsWith('.pdf') ? (
+                        <a
+                          href={doc.url}
+                          download={doc.name}
+                          className="mt-2 inline-flex items-center gap-1 px-3 py-1.5 text-sm text-indigo-600 bg-indigo-50 rounded-full hover:bg-indigo-100 transition-colors"
+                        >
+                          <Download className="w-4 h-4" />
+                          Download PDF
+                        </a>
+                      ) : (
+                        <a
+                          href={doc.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-2 inline-flex items-center px-3 py-1.5 text-sm text-indigo-600 bg-indigo-50 rounded-full hover:bg-indigo-100 transition-colors"
+                        >
+                          View Document
+                        </a>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -341,6 +365,28 @@ const ApplicationDetail = () => {
           </div>
         </div>
       </main>
+
+      {/* Image Modal */}
+      {selectedImage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75">
+          <div className="relative max-w-4xl max-h-[90vh] w-full mx-4">
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="absolute -top-10 right-0 text-white hover:text-gray-300"
+            >
+              <XIcon className="w-6 h-6" />
+            </button>
+            <div className="relative w-full h-full">
+              {/* Using img tag instead of next/image for external URLs */}
+              <img
+                src={selectedImage}
+                alt="Document Preview"
+                className="w-full h-full object-contain rounded-lg"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
