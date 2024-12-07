@@ -16,6 +16,7 @@
 /frontend/.env.production.local
 /backend/.env
 /backend/.env.backup
+/chat_service/.env
 
 # Logs
 /frontend/npm-debug.log*

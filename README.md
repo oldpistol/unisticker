@@ -16,6 +16,12 @@ UniSticker is a web application designed to modernize the vehicle sticker applic
 - Apache Web Server
 - MySQL 8.0
 
+### Chat Service
+- FastAPI (Python)
+- WebSocket for real-time communication
+- Mistral AI for intelligent responses
+- Uvicorn ASGI server
+
 ## Prerequisites 📋
 
 Before you begin, ensure you have the following installed:
@@ -25,6 +31,7 @@ Before you begin, ensure you have the following installed:
 - npm
 - MySQL 8.0
 - Apache/Nginx web server
+- Python 3.8 or higher
 - Git
 
 ## Installation Steps 🚀
@@ -84,11 +91,41 @@ NEXT_PUBLIC_API_URL=http://localhost:8000/api
 npm run dev
 ```
 
+### 4. Chat Service Setup
+
+```bash
+# Navigate to chat service directory
+cd chat_service
+
+# Install Python dependencies
+pip install -r requirements.txt
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env and add your Mistral AI API key
+
+# Start the chat service
+uvicorn main:app --reload --port 8080
+```
+The chat service provides:
+- Real-time chat functionality using WebSockets
+- AI-powered responses for vehicle sticker inquiries
+- Automatic message streaming
+- Multi-user support
+
+To use the chat service, you'll need:
+1. A Mistral AI API key (get it from https://console.mistral.ai/)
+2. Python 3.8 or higher installed
+3. The required Python packages (listed in requirements.txt)
+
+The chat service runs on port 8080 by default and integrates with the frontend chatbot interface.
+
 ### 4. Accessing the Application
 
 After the installation is complete, you can access:
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:8000/api
+- Chat Service: http://localhost:8080
 
 ## Development 👩‍💻👨‍💻
 
@@ -150,7 +187,21 @@ unisticker/
     ├── database/
     ├── routes/
     └── ...
+└── chat_service/            # FastAPI chat service application
+    ├── app/
+    ├── requirements.txt
+    └── ...
 ```
+
+## Features 🌟
+
+- User Authentication and Authorization
+- Vehicle Sticker Application Management
+- Document Upload and Verification
+- Application Status Tracking
+- Real-time AI Chat Support
+- Multi-language Support
+- Responsive Design
 
 ## Support 💬
 

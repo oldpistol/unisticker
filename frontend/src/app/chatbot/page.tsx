@@ -14,6 +14,7 @@ interface ChatMessage {
   timestamp: string;
   status?: 'sending' | 'sent' | 'error';
   client_id?: string;
+  isAI?: boolean;
 }
 
 const ChatBot = () => {
@@ -28,6 +29,8 @@ const ChatBot = () => {
   const [wsError, setWsError] = useState<string>('');
   const ws = useRef<WebSocket | null>(null);
   const clientId = useRef<string>(Math.random().toString(36).substring(7));
+  const [streamingMessage, setStreamingMessage] = useState<string>('');
+  const [isStreaming, setIsStreaming] = useState(false);
 
   // WebSocket URL - adjust this based on your environment
   const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://127.0.0.1:8080';
@@ -61,19 +64,39 @@ const ChatBot = () => {
 
         ws.current.onmessage = (event) => {
           const data = JSON.parse(event.data);
-          if (data.type === 'disconnect') {
+          
+          if (data.type === 'stream') {
+            setIsStreaming(true);
+            setStreamingMessage(prev => prev + data.token);
+          } else if (data.type === 'message') {
+            if (data.client_id === 'ai') {
+              // Complete AI message received
+              setIsStreaming(false);
+              setStreamingMessage('');
+              setMessages(prev => [...prev, {
+                id: prev.length + 1,
+                text: data.message,
+                isUser: false,
+                isAI: true,
+                timestamp: data.timestamp,
+                status: 'sent'
+              }]);
+            } else {
+              // Regular user message
+              setMessages(prev => [...prev, {
+                id: prev.length + 1,
+                text: data.message,
+                isUser: data.client_id === clientId.current,
+                timestamp: data.timestamp,
+                client_id: data.client_id,
+                status: 'sent'
+              }]);
+            }
+          } else if (data.type === 'disconnect') {
             setMessages(prev => [...prev, {
               id: prev.length + 1,
               text: `User ${data.client_id} ${data.message}`,
               isUser: false,
-              timestamp: new Date().toLocaleTimeString(),
-              client_id: data.client_id
-            }]);
-          } else {
-            setMessages(prev => [...prev, {
-              id: prev.length + 1,
-              text: data.message,
-              isUser: data.client_id === clientId.current,
               timestamp: new Date().toLocaleTimeString(),
               client_id: data.client_id
             }]);
@@ -117,6 +140,16 @@ const ChatBot = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim() || isLoading || !wsConnected) return;
+
+    // Add user message immediately to the UI
+    const userMessage: ChatMessage = {
+      id: messages.length + 1,
+      text: inputText.trim(),
+      isUser: true,
+      timestamp: new Date().toLocaleTimeString(),
+      status: 'sending'
+    };
+    setMessages(prev => [...prev, userMessage]);
 
     const message = {
       message: inputText.trim(),
@@ -169,11 +202,19 @@ const ChatBot = () => {
                     className={`max-w-[80%] rounded-lg px-4 py-2 ${
                       message.isUser
                         ? 'bg-indigo-600 text-white'
+                        : message.isAI
+                        ? 'bg-green-100 text-gray-800'
                         : 'bg-gray-100 text-gray-800'
                     }`}
                   >
-                    {message.client_id && !message.isUser && (
+                    {message.client_id && !message.isUser && !message.isAI && (
                       <p className="text-xs text-gray-500 mb-1">User: {message.client_id}</p>
+                    )}
+                    {message.isAI && (
+                      <p className="text-xs text-gray-500 mb-1">AI Assistant</p>
+                    )}
+                    {message.isUser && (
+                      <p className="text-xs text-white mb-1">You</p>
                     )}
                     <p className="whitespace-pre-wrap">{message.text}</p>
                     <div className="flex items-center justify-end gap-2 mt-1">
@@ -191,6 +232,14 @@ const ChatBot = () => {
                   </div>
                 </div>
               ))}
+              {isStreaming && (
+                <div className="flex justify-start">
+                  <div className="max-w-[80%] rounded-lg px-4 py-2 bg-green-100 text-gray-800">
+                    <p className="text-xs text-gray-500 mb-1">AI Assistant</p>
+                    <p className="whitespace-pre-wrap">{streamingMessage}</p>
+                  </div>
+                </div>
+              )}
               <div ref={messagesEndRef} />
             </div>
 
