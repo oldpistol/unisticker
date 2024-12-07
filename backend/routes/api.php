@@ -10,6 +10,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\Auth\UserController;
 use App\Http\Controllers\StickerApplication\CreateController;
 use App\Http\Controllers\StickerApplication\IndexController;
 use Illuminate\Support\Facades\Route;
@@ -19,6 +20,7 @@ Route::group(['prefix' => 'auth'], function () {
     Route::post('/register', RegisterController::class);
     Route::post('/login', LoginController::class);
     Route::get('/check', AuthCheckController::class)->middleware('auth:sanctum');
+    Route::get('/user', UserController::class)->middleware('auth:sanctum');
     Route::post('/logout', LogoutController::class)->middleware('auth:sanctum');
     Route::post('/forgot-password', ForgotPasswordController::class);
     Route::post('/reset-password', ResetPasswordController::class)->name('password.reset');

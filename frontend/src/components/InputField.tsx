@@ -11,6 +11,7 @@ interface InputFieldProps {
   className?: string;
   options?: string[];
   multiline?: boolean;
+  disabled?: boolean;
 }
 
 const InputField: React.FC<InputFieldProps> = ({
@@ -26,6 +27,7 @@ const InputField: React.FC<InputFieldProps> = ({
   type = "text",
   options,
   multiline = false,
+  disabled = false,
 }) => {
   return (
     <div className={`flex flex-col space-y-1.5 ${className}`}>
@@ -39,6 +41,7 @@ const InputField: React.FC<InputFieldProps> = ({
           value={value}
           onChange={onChange as (e: React.ChangeEvent<HTMLSelectElement>) => void}
           required={required}
+          disabled={disabled}
           className={`block w-full px-3 py-2 bg-white border rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${
             error ? 'border-red-500' : 'border-gray-300'
           }`}
@@ -57,6 +60,7 @@ const InputField: React.FC<InputFieldProps> = ({
           value={value}
           onChange={onChange as (e: React.ChangeEvent<HTMLTextAreaElement>) => void}
           required={required}
+          disabled={disabled}
           placeholder={placeholder}
           rows={3}
           className={`block w-full px-3 py-2 bg-white border rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${
@@ -71,6 +75,7 @@ const InputField: React.FC<InputFieldProps> = ({
           value={value}
           onChange={onChange as (e: React.ChangeEvent<HTMLInputElement>) => void}
           required={required}
+          disabled={disabled}
           placeholder={placeholder}
           className={`block w-full px-3 py-2 bg-white border rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${
             error ? 'border-red-500' : 'border-gray-300'

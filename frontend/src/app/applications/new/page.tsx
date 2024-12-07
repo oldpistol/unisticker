@@ -15,6 +15,11 @@ import {
 } from 'lucide-react';
 import InputField from '@/components/InputField';
 import FileUploadField from '@/components/FileUploadField';
+import { createStickerApplication } from '@/services/stickerApplicationService';
+import { useRouter } from 'next/navigation';
+import { getCurrentUser } from '@/services/userService';
+import { toast } from 'sonner';
+import withAuth from '@/middleware/withAuth'; // Import withAuth HOC
 
 interface FormData {
   // Personal Information
@@ -48,8 +53,13 @@ interface FormData {
   };
 }
 
-export default function NewApplication() {
+export default withAuth(NewApplication); // Apply withAuth HOC to NewApplication page
+
+function NewApplication() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+
   const [formData, setFormData] = useState<FormData>({
     // Personal Information
     fullName: '',
@@ -90,10 +100,43 @@ export default function NewApplication() {
   const [errors, setErrors] = useState<Partial<FormData>>({});
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prevData => ({
-      ...prevData,
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        setIsLoading(true);
+        const userData = await getCurrentUser();
+        console.log('Setting form data with:', userData); // Debug log
+        setFormData(prevData => ({
+          ...prevData,
+          fullName: userData.name,
+          matricNo: userData.matric_id,
+          email: userData.email,
+          phoneNumber: userData.phone_no
+        }));
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        toast.error('Failed to load user information');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center min-h-screen">
+      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900"></div>
+    </div>;
+  }
+
+  const isAutoPopulatedField = (fieldName: string) => {
+    return ['fullName', 'matricNo', 'email', 'phoneNumber'].includes(fieldName);
+  };
+
+  const handleInputChange = (name: keyof FormData, value: any) => {
+    setFormData(prev => ({
+      ...prev,
       [name]: value
     }));
   };
@@ -141,11 +184,40 @@ export default function NewApplication() {
 
   const handleConfirmSubmit = async () => {
     try {
-      // Add your submission logic here
-      console.log('Submitting application:', formData);
-      // Redirect to applications list after successful submission
+      const applicationData = {
+        vehicle_brand_model_id: parseInt(formData.vehicleBrand), // You'll need to update this to use actual brand model ID
+        vehicle_plate_no: formData.vehiclePlateNo,
+        vehicle_type: formData.vehicleType,
+        vehicle_color: formData.vehicleColor,
+        road_tax_expiry_date: formData.roadTaxExpiryDate,
+        insurance_name: formData.insuranceName,
+        insurance_number: formData.insuranceNumber,
+        driving_license_no: formData.drivingLicenseNo,
+        documents: [
+          {
+            file: formData.documents.roadTax!,
+            type: 'road_tax'
+          },
+          {
+            file: formData.documents.drivingLicenseFront!,
+            type: 'driving_license_front'
+          },
+          {
+            file: formData.documents.drivingLicenseBack!,
+            type: 'driving_license_back'
+          },
+          {
+            file: formData.documents.insuranceCoverNote!,
+            type: 'insurance_cover_note'
+          }
+        ].filter(doc => doc.file !== null)
+      };
+
+      await createStickerApplication(applicationData);
+      router.push('/applications');
     } catch (error) {
       console.error('Error submitting application:', error);
+      // Handle error (show error message to user)
     }
   };
 
@@ -177,18 +249,20 @@ export default function NewApplication() {
                 name="fullName"
                 id="fullName"
                 value={formData.fullName}
-                onChange={handleInputChange}
+                onChange={(e) => handleInputChange('fullName', e.target.value)}
                 error={errors.fullName}
                 required
+                disabled={isAutoPopulatedField('fullName')}
               />
               <InputField
                 label="Matric Number"
                 name="matricNo"
                 id="matricNo"
                 value={formData.matricNo}
-                onChange={handleInputChange}
+                onChange={(e) => handleInputChange('matricNo', e.target.value)}
                 error={errors.matricNo}
                 required
+                disabled={isAutoPopulatedField('matricNo')}
               />
               <InputField
                 label="Email"
@@ -196,18 +270,20 @@ export default function NewApplication() {
                 id="email"
                 type="email"
                 value={formData.email}
-                onChange={handleInputChange}
+                onChange={(e) => handleInputChange('email', e.target.value)}
                 error={errors.email}
                 required
+                disabled={isAutoPopulatedField('email')}
               />
               <InputField
                 label="Phone Number"
                 name="phoneNumber"
                 id="phoneNumber"
                 value={formData.phoneNumber}
-                onChange={handleInputChange}
+                onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
                 error={errors.phoneNumber}
                 required
+                disabled={isAutoPopulatedField('phoneNumber')}
               />
               <div className="md:col-span-2">
                 <InputField
@@ -215,7 +291,7 @@ export default function NewApplication() {
                   name="address"
                   id="address"
                   value={formData.address}
-                  onChange={handleInputChange}
+                  onChange={(e) => handleInputChange('address', e.target.value)}
                   error={errors.address}
                   required
                   multiline
@@ -226,7 +302,7 @@ export default function NewApplication() {
                 name="drivingLicenseNo"
                 id="drivingLicenseNo"
                 value={formData.drivingLicenseNo}
-                onChange={handleInputChange}
+                onChange={(e) => handleInputChange('drivingLicenseNo', e.target.value)}
                 error={errors.drivingLicenseNo}
                 required
               />
@@ -245,7 +321,7 @@ export default function NewApplication() {
                 name="vehiclePlateNo"
                 id="vehiclePlateNo"
                 value={formData.vehiclePlateNo}
-                onChange={handleInputChange}
+                onChange={(e) => handleInputChange('vehiclePlateNo', e.target.value)}
                 error={errors.vehiclePlateNo}
                 required
               />
@@ -255,7 +331,7 @@ export default function NewApplication() {
                 id="vehicleType"
                 type="select"
                 value={formData.vehicleType}
-                onChange={handleInputChange}
+                onChange={(e) => handleInputChange('vehicleType', e.target.value)}
                 error={errors.vehicleType}
                 options={vehicleTypes}
                 required
@@ -266,7 +342,7 @@ export default function NewApplication() {
                 id="vehicleBrand"
                 type="select"
                 value={formData.vehicleBrand}
-                onChange={handleInputChange}
+                onChange={(e) => handleInputChange('vehicleBrand', e.target.value)}
                 error={errors.vehicleBrand}
                 options={vehicleBrands}
                 required
@@ -277,7 +353,7 @@ export default function NewApplication() {
                 id="vehicleModel"
                 type="select"
                 value={formData.vehicleModel}
-                onChange={handleInputChange}
+                onChange={(e) => handleInputChange('vehicleModel', e.target.value)}
                 error={errors.vehicleModel}
                 options={vehicleModels}
                 required
@@ -287,7 +363,7 @@ export default function NewApplication() {
                 name="vehicleColor"
                 id="vehicleColor"
                 value={formData.vehicleColor}
-                onChange={handleInputChange}
+                onChange={(e) => handleInputChange('vehicleColor', e.target.value)}
                 error={errors.vehicleColor}
                 required
               />
@@ -313,7 +389,7 @@ export default function NewApplication() {
                   name="ownerFullName"
                   id="ownerFullName"
                   value={formData.ownerFullName}
-                  onChange={handleInputChange}
+                  onChange={(e) => handleInputChange('ownerFullName', e.target.value)}
                   error={errors.ownerFullName}
                   required
                 />
@@ -334,7 +410,7 @@ export default function NewApplication() {
                 id="roadTaxExpiryDate"
                 type="date"
                 value={formData.roadTaxExpiryDate}
-                onChange={handleInputChange}
+                onChange={(e) => handleInputChange('roadTaxExpiryDate', e.target.value)}
                 error={errors.roadTaxExpiryDate}
                 required
               />
@@ -344,7 +420,7 @@ export default function NewApplication() {
                 id="insuranceName"
                 type="select"
                 value={formData.insuranceName}
-                onChange={handleInputChange}
+                onChange={(e) => handleInputChange('insuranceName', e.target.value)}
                 error={errors.insuranceName}
                 options={insuranceCompanies}
                 required
@@ -354,7 +430,7 @@ export default function NewApplication() {
                 name="insuranceNumber"
                 id="insuranceNumber"
                 value={formData.insuranceNumber}
-                onChange={handleInputChange}
+                onChange={(e) => handleInputChange('insuranceNumber', e.target.value)}
                 error={errors.insuranceNumber}
                 required
               />
@@ -373,15 +449,7 @@ export default function NewApplication() {
                 label="Road Tax"
                 accept=".pdf,.jpg,.jpeg,.png"
                 value={formData.documents.roadTax}
-                onChange={(file) => {
-                  setFormData(prev => ({
-                    ...prev,
-                    documents: {
-                      ...prev.documents,
-                      roadTax: file
-                    }
-                  }));
-                }}
+                onChange={(file) => handleFileChange('roadTax', file)}
               />
 
               <FileUploadField
@@ -389,15 +457,7 @@ export default function NewApplication() {
                 label="Driving License (Front)"
                 accept=".pdf,.jpg,.jpeg,.png"
                 value={formData.documents.drivingLicenseFront}
-                onChange={(file) => {
-                  setFormData(prev => ({
-                    ...prev,
-                    documents: {
-                      ...prev.documents,
-                      drivingLicenseFront: file
-                    }
-                  }));
-                }}
+                onChange={(file) => handleFileChange('drivingLicenseFront', file)}
               />
 
               <FileUploadField
@@ -405,15 +465,7 @@ export default function NewApplication() {
                 label="Driving License (Back)"
                 accept=".pdf,.jpg,.jpeg,.png"
                 value={formData.documents.drivingLicenseBack}
-                onChange={(file) => {
-                  setFormData(prev => ({
-                    ...prev,
-                    documents: {
-                      ...prev.documents,
-                      drivingLicenseBack: file
-                    }
-                  }));
-                }}
+                onChange={(file) => handleFileChange('drivingLicenseBack', file)}
               />
 
               <FileUploadField
@@ -421,15 +473,7 @@ export default function NewApplication() {
                 label="Insurance Cover Note"
                 accept=".pdf,.jpg,.jpeg,.png"
                 value={formData.documents.insuranceCoverNote}
-                onChange={(file) => {
-                  setFormData(prev => ({
-                    ...prev,
-                    documents: {
-                      ...prev.documents,
-                      insuranceCoverNote: file
-                    }
-                  }));
-                }}
+                onChange={(file) => handleFileChange('insuranceCoverNote', file)}
               />
             </div>
           </div>
