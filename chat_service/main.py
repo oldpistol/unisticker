@@ -1,8 +1,9 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List, Dict
-from datetime import datetime
+from typing import Dict, Optional
+from urllib.parse import parse_qs, urlparse, unquote
 import json
+from datetime import datetime
 import os
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -27,128 +28,206 @@ client = OpenAI(
     base_url="https://api.mistral.ai/v1"  # Mistral AI API endpoint
 )
 
-# System prompt for the chatbot
-SYSTEM_PROMPT = """You are the UniSticker AI Assistant, specifically designed to help with UTM (Universiti Teknologi Malaysia) vehicle sticker applications only.
+# System prompt template
+SYSTEM_PROMPT_TEMPLATE = """You are a concise and helpful AI Assistant for UTM (Universiti Teknologi Malaysia) vehicle sticker applications.
 
-IMPORTANT: Only respond to queries related to UTM vehicle sticker applications. If a user asks about anything unrelated, politely remind them that you can only assist with UTM vehicle sticker matters.
+Current User: {name} ({role})
+{additional_info}
 
-Your specific areas of assistance are limited to:
-1. Vehicle Sticker Application Process:
-   - How to apply for a UTM vehicle sticker
-   - Step-by-step application guidance
-   - Required forms and submission process
+Keep responses brief and direct. Focus on these topics only:
+1. Application Process
+2. Required Documents
+3. Application Status
+4. Sticker Collection
 
-2. Documentation Requirements:
-   - List of required documents
-   - Document verification process
-   - Document submission guidelines
+For other topics, reply: "I can only help with UTM vehicle sticker applications. Please contact UTM directly for other matters."
 
-3. Application Status:
-   - How to check application status
-   - Processing timeframes
-   - Status update inquiries
-
-4. Sticker Collection:
-   - When and where to collect the sticker
-   - Collection requirements
-   - Validity period
-
-If asked about anything outside these topics, respond with:
-"I apologize, but I can only assist with matters related to UTM vehicle sticker applications. For your question about [topic], please contact the relevant UTM department or visit the UTM website."
-
-Always maintain a professional and helpful tone, and ensure all information provided aligns with UTM's official vehicle sticker policies."""
+Always maintain a professional but concise tone."""
 
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: Dict[str, Dict] = {}
+        self.active_connections: Dict[str, WebSocket] = {}
+        self.user_info: Dict[str, dict] = {}
 
-    async def connect(self, websocket: WebSocket, client_id: str):
+    async def connect(self, websocket: WebSocket, client_id: str, user_info: Optional[dict] = None):
         await websocket.accept()
-        self.active_connections[client_id] = {
-            "websocket": websocket,
-            "messages": [{"role": "system", "content": SYSTEM_PROMPT}]
-        }
+        self.active_connections[client_id] = websocket
+        if user_info:
+            self.user_info[client_id] = user_info
+            
+    def get_user_info(self, client_id: str) -> Optional[dict]:
+        return self.user_info.get(client_id)
 
     def disconnect(self, client_id: str):
         if client_id in self.active_connections:
             del self.active_connections[client_id]
+        if client_id in self.user_info:
+            del self.user_info[client_id]
 
     async def broadcast(self, message: Dict, exclude_client: str = None):
         for client_id, connection in self.active_connections.items():
             if client_id != exclude_client:
-                await connection["websocket"].send_json(message)
+                await connection.send_json(message)
 
     def get_messages(self, client_id: str):
-        return self.active_connections[client_id]["messages"]
+        return self.user_info[client_id].get("messages", [])
 
     def add_message(self, client_id: str, message: Dict):
-        self.active_connections[client_id]["messages"].append(message)
+        if "messages" not in self.user_info[client_id]:
+            self.user_info[client_id]["messages"] = []
+        self.user_info[client_id]["messages"].append(message)
 
 manager = ConnectionManager()
 
 @app.websocket("/ws/{client_id}")
 async def websocket_endpoint(websocket: WebSocket, client_id: str):
-    await manager.connect(websocket, client_id)
     try:
+        # Parse user info from query parameters with proper URL decoding
+        query = urlparse(str(websocket.url)).query
+        params = parse_qs(query)
+        
+        # Enhanced user info parsing with URL decoding
+        try:
+            user_info_str = params.get('user_info', ['{}'])[0]
+            # URL decode the string before parsing as JSON
+            decoded_user_info = unquote(user_info_str)
+            user_info = json.loads(decoded_user_info)
+            print(f"[WebSocket {client_id}] Decoded user info: {user_info}")
+            
+            # Validate required fields
+            required_fields = ['name', 'role', 'matricNo', 'email']
+            for field in required_fields:
+                if field not in user_info:
+                    user_info[field] = 'N/A'
+                elif not user_info[field] or user_info[field].isspace():
+                    user_info[field] = 'N/A'
+            
+        except json.JSONDecodeError as e:
+            print(f"[WebSocket {client_id}] Error parsing user info JSON: {e}")
+            user_info = {
+                'name': 'Guest User',
+                'role': 'Guest',
+                'matricNo': 'N/A',
+                'email': 'N/A'
+            }
+        except Exception as e:
+            print(f"[WebSocket {client_id}] Error processing user info: {e}")
+            user_info = {
+                'name': 'Guest User',
+                'role': 'Guest',
+                'matricNo': 'N/A',
+                'email': 'N/A'
+            }
+        
+        print(f"[WebSocket {client_id}] Connecting with user info: {user_info}")
+        await manager.connect(websocket, client_id, user_info)
+        
+        # Send initial connection success message
+        await websocket.send_json({
+            "type": "connection_status",
+            "status": "connected",
+            "client_id": client_id,
+            "user_info": user_info
+        })
+        
         while True:
-            data = await websocket.receive_json()
-            
-            # Add user message to history
-            user_message = {"role": "user", "content": data["message"]}
-            manager.add_message(client_id, user_message)
-            
-            # Get conversation history
-            messages = manager.get_messages(client_id)
-            
             try:
-                # Stream the response
-                stream = client.chat.completions.create(
-                    model="mistral-tiny",  # or "mistral-small" or "mistral-medium"
-                    messages=messages,
-                    stream=True
-                )
-
-                full_response = ""
-                for chunk in stream:
-                    if chunk.choices[0].delta.content is not None:
-                        content = chunk.choices[0].delta.content
-                        full_response += content
-                        await websocket.send_json({
-                            "type": "stream",
-                            "token": content
-                        })
-
-                # Add AI response to history
-                ai_message = {"role": "assistant", "content": full_response}
-                manager.add_message(client_id, ai_message)
+                data = await websocket.receive_json()
+                user_info = manager.get_user_info(client_id)
                 
-                # Send the complete response
-                await websocket.send_json({
-                    "type": "message",
-                    "client_id": "ai",
-                    "message": full_response,
-                    "timestamp": datetime.now().strftime("%H:%M:%S")
-                })
-            
+                if not user_info:
+                    print(f"[WebSocket {client_id}] Warning: No user info found, using defaults")
+                    user_info = {
+                        'name': 'Guest User',
+                        'role': 'Guest',
+                        'matricNo': 'N/A',
+                        'email': 'N/A'
+                    }
+                
+                # Get user details with fallbacks
+                user_name = user_info.get('name', '').strip() if user_info else ''
+                user_role = user_info.get('role', '').strip() if user_info else ''
+                user_matric = user_info.get('matricNo', '').strip() if user_info else ''
+                user_email = user_info.get('email', '').strip() if user_info else ''
+                
+                # Build additional info string
+                additional_info = ""
+                if user_matric and user_matric != 'N/A':
+                    additional_info += f"Matric No: {user_matric}\n"
+                if user_email and user_email != 'N/A':
+                    additional_info += f"Email: {user_email}"
+                
+                # Create personalized system prompt
+                system_prompt = SYSTEM_PROMPT_TEMPLATE.format(
+                    name=user_name if user_name and user_name != 'Guest User' else 'there',
+                    role=user_role if user_role != 'Guest' else 'Visitor',
+                    additional_info=additional_info.strip()
+                )
+                
+                print("Using system prompt:", system_prompt)  # Debug print
+                
+                messages = [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": data["message"]}
+                ]
+                
+                try:
+                    # Stream the response
+                    stream = client.chat.completions.create(
+                        model="mistral-tiny",  # or "mistral-small" or "mistral-medium"
+                        messages=messages,
+                        stream=True
+                    )
+
+                    full_response = ""
+                    for chunk in stream:
+                        if chunk.choices[0].delta.content is not None:
+                            content = chunk.choices[0].delta.content
+                            full_response += content
+                            await websocket.send_json({
+                                "type": "stream",
+                                "token": content
+                            })
+
+                    # Add AI response to history
+                    ai_message = {"role": "assistant", "content": full_response}
+                    manager.add_message(client_id, ai_message)
+                    
+                    # Send the complete response
+                    await websocket.send_json({
+                        "type": "message",
+                        "client_id": "ai",
+                        "message": full_response,
+                        "timestamp": datetime.now().strftime("%H:%M:%S")
+                    })
+                
+                except Exception as e:
+                    error_message = f"Error processing message: {str(e)}"
+                    await websocket.send_json({
+                        "type": "error",
+                        "message": error_message
+                    })
+                
+                # Broadcast user message to other clients
+                await manager.broadcast(
+                    {
+                        "type": "message",
+                        "client_id": client_id,
+                        "message": data["message"],
+                        "timestamp": datetime.now().strftime("%H:%M:%S")
+                    },
+                    exclude_client=client_id
+                )
+                
+            except WebSocketDisconnect:
+                raise  # Re-raise to be caught by outer try block
             except Exception as e:
-                error_message = f"Error processing message: {str(e)}"
+                error_message = f"Error handling message: {str(e)}"
                 await websocket.send_json({
                     "type": "error",
                     "message": error_message
                 })
-                continue
-            
-            # Broadcast user message to other clients
-            await manager.broadcast(
-                {
-                    "type": "message",
-                    "client_id": client_id,
-                    "message": data["message"],
-                    "timestamp": datetime.now().strftime("%H:%M:%S")
-                },
-                exclude_client=client_id
-            )
-            
+                
     except WebSocketDisconnect:
         manager.disconnect(client_id)
         await manager.broadcast({
@@ -156,3 +235,7 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
             "client_id": client_id,
             "message": "left the chat"
         })
+    except Exception as e:
+        print(f"Unexpected error: {str(e)}")
+        if client_id in manager.active_connections:
+            manager.disconnect(client_id)

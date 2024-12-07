@@ -17,6 +17,13 @@ interface ChatMessage {
   isAI?: boolean;
 }
 
+interface UserInfo {
+  name: string;
+  matricNo: string;
+  email: string;
+  role: string;
+}
+
 const ChatBot = () => {
   const pathname = usePathname();
   const activeMenuItems = getActiveMenuItems(pathname);
@@ -31,18 +38,99 @@ const ChatBot = () => {
   const clientId = useRef<string>(Math.random().toString(36).substring(7));
   const [streamingMessage, setStreamingMessage] = useState<string>('');
   const [isStreaming, setIsStreaming] = useState(false);
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
 
   // WebSocket URL - adjust this based on your environment
   const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://127.0.0.1:8080';
 
+  // Set mounted state when component mounts
+  useEffect(() => {
+    console.log('Component mounted');
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
+  // Fetch user information
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        console.log('Fetching user info...');
+        // Get the auth token from localStorage
+        const token = localStorage.getItem('auth_token');
+        console.log('Token found:', !!token);
+        
+        if (token) {
+          // Try to get authenticated user info
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+          console.log('Fetching from:', `${apiUrl}/auth/user`);
+          
+          const response = await fetch(`${apiUrl}/auth/user`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+            },
+          });
+
+          console.log('API Response status:', response.status);
+          
+          if (response.ok) {
+            const data = await response.json();
+            console.log('API Response data:', data);
+            
+            const userInfo = {
+              name: data.data?.name || 'Guest User',
+              matricNo: data.data?.matric_id || 'N/A',
+              email: data.data?.email || 'N/A',
+              role: data.data?.role || 'Guest'
+            };
+            console.log('Setting user info:', userInfo);
+            setUserInfo(userInfo);
+            return;
+          } else {
+            console.log('API Response not OK:', await response.text());
+          }
+        }
+
+        // If no token or fetch failed, set guest info
+        const guestInfo = {
+          name: 'Guest User',
+          matricNo: 'N/A',
+          email: 'N/A',
+          role: 'Guest'
+        };
+        console.log('Setting guest info:', guestInfo);
+        setUserInfo(guestInfo);
+      } catch (error) {
+        console.error('Error fetching user info:', error);
+        // Set guest info on error
+        const guestInfo = {
+          name: 'Guest User',
+          matricNo: 'N/A',
+          email: 'N/A',
+          role: 'Guest'
+        };
+        console.log('Setting guest info after error:', guestInfo);
+        setUserInfo(guestInfo);
+      }
+    };
+
+    if (mounted) {
+      fetchUserInfo();
+    }
+  }, [mounted]);
+
   // WebSocket connection
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted || !userInfo) return;
 
     const connectWebSocket = () => {
       try {
         setWsError('');
-        ws.current = new WebSocket(`${WS_URL}/ws/${clientId.current}`);
+        // Include user information in the connection URL
+        const userInfoParam = encodeURIComponent(JSON.stringify(userInfo));
+        console.log('Connecting WebSocket with user info:', userInfo);
+        ws.current = new WebSocket(`${WS_URL}/ws/${clientId.current}?user_info=${userInfoParam}`);
 
         ws.current.onopen = () => {
           setWsConnected(true);
@@ -115,7 +203,7 @@ const ChatBot = () => {
         ws.current.close();
       }
     };
-  }, [mounted]);
+  }, [mounted, userInfo]);
 
   // Initial greeting message
   useEffect(() => {
@@ -222,10 +310,10 @@ const ChatBot = () => {
                         {message.timestamp}
                       </span>
                       {message.isUser && message.status && (
-                        <span className="text-xs">
-                          {message.status === 'sending' && '⏳'}
-                          {message.status === 'sent' && '✓'}
-                          {message.status === 'error' && '⚠️'}
+                        <span className="text-xs text-gray-400">
+                          {message.status === 'sending' && 'Sending...'}
+                          {message.status === 'sent' && 'Delivered'}
+                          {message.status === 'error' && 'Failed to send'}
                         </span>
                       )}
                     </div>
