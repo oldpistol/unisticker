@@ -49,9 +49,18 @@ function ApplicationsPage() {
         status: selectedStatus !== 'all' ? selectedStatus : undefined,
       });
       
-      setApplications(response.data);
-      setTotalItems(response.total);
-      setTotalPages(response.last_page);
+      let filteredData = response.data;
+      
+      // Apply year filter on client side
+      if (selectedYear !== 'all') {
+        filteredData = response.data.filter(app => 
+          new Date(app.application_date).getFullYear().toString() === selectedYear
+        );
+      }
+      
+      setApplications(filteredData);
+      setTotalItems(filteredData.length);
+      setTotalPages(Math.ceil(filteredData.length / itemsPerPage));
     } catch (error) {
       console.error('Error fetching applications:', error);
     } finally {
@@ -61,7 +70,7 @@ function ApplicationsPage() {
 
   useEffect(() => {
     fetchApplications();
-  }, [currentPage, searchTerm, selectedStatus]);
+  }, [currentPage, searchTerm, selectedStatus, selectedYear]);
 
   const handleSearch = (value: string) => {
     setCurrentPage(1);
@@ -144,22 +153,6 @@ function ApplicationsPage() {
           )}
         </div>
       )
-    },
-    {
-      header: 'Documents',
-      accessor: (application: ApplicationData) => (
-        <div className="flex flex-col gap-2">
-          {application.documents.map((doc) => (
-            <button
-              key={doc.id}
-              onClick={() => handleDocumentDownload(doc.id)}
-              className="text-blue-600 hover:text-blue-800 underline text-left"
-            >
-              {doc.name}
-            </button>
-          ))}
-        </div>
-      ),
     }
   ];
 

@@ -73,6 +73,10 @@ const getStatusIcon = (status: string) => {
   }
 };
 
+const toTitleCase = (str: string) => {
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+};
+
 const ApplicationDetail = () => {
   const router = useRouter();
   const params = useParams();
@@ -189,7 +193,7 @@ const ApplicationDetail = () => {
             </div>
             <div className={`px-4 py-2 rounded-full flex items-center gap-2 ${getStatusColor(application.status)}`}>
               {getStatusIcon(application.status)}
-              <span className="text-sm font-medium">{application.status}</span>
+              <span className="text-sm font-medium">{toTitleCase(application.status)}</span>
             </div>
           </div>
         </div>
@@ -346,7 +350,7 @@ const ApplicationDetail = () => {
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-medium text-gray-900">
-                          {item.status}
+                          {toTitleCase(item.status)}
                         </div>
                         <div className="mt-0.5 text-sm text-gray-500">
                           {item.date}
