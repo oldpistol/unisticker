@@ -97,7 +97,7 @@ const ChatBot = () => {
           name: 'Guest User',
           matricNo: 'N/A',
           email: 'N/A',
-          role: 'Guest'
+          role: 'Student'
         };
         console.log('Setting guest info:', guestInfo);
         setUserInfo(guestInfo);
@@ -108,7 +108,7 @@ const ChatBot = () => {
           name: 'Guest User',
           matricNo: 'N/A',
           email: 'N/A',
-          role: 'Guest'
+          role: 'Student'
         };
         console.log('Setting guest info after error:', guestInfo);
         setUserInfo(guestInfo);
@@ -170,15 +170,13 @@ const ChatBot = () => {
                 status: 'sent'
               }]);
             } else {
-              // Regular user message
-              setMessages(prev => [...prev, {
-                id: prev.length + 1,
-                text: data.message,
-                isUser: data.client_id === clientId.current,
-                timestamp: data.timestamp,
-                client_id: data.client_id,
-                status: 'sent'
-              }]);
+              // Update the status of the sending message to sent
+              setMessages(prev => prev.map(msg => {
+                if (msg.status === 'sending' && msg.text === data.message) {
+                  return { ...msg, status: 'sent' };
+                }
+                return msg;
+              }));
             }
           } else if (data.type === 'disconnect') {
             setMessages(prev => [...prev, {

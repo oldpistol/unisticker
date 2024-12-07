@@ -106,7 +106,7 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
             print(f"[WebSocket {client_id}] Error parsing user info JSON: {e}")
             user_info = {
                 'name': 'Guest User',
-                'role': 'Guest',
+                'role': 'Student',
                 'matricNo': 'N/A',
                 'email': 'N/A'
             }
@@ -114,7 +114,7 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
             print(f"[WebSocket {client_id}] Error processing user info: {e}")
             user_info = {
                 'name': 'Guest User',
-                'role': 'Guest',
+                'role': 'Student',
                 'matricNo': 'N/A',
                 'email': 'N/A'
             }
