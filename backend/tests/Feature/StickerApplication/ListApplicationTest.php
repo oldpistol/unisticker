@@ -65,13 +65,24 @@ test('user can list their sticker applications', function () {
             'data' => [
                 '*' => [
                     'id',
-                    'user' => ['id', 'name', 'email'],
+                    'user' => [
+                        'id',
+                        'name',
+                        'email',
+                        'matric_id',
+                        'phone_no'
+                    ],
                     'vehicle' => [
                         'id',
                         'plate_no',
                         'type',
                         'color',
-                        'brand_model'
+                        'brand',
+                        'model',
+                        'driving_license_no',
+                        'road_tax_expiry_date',
+                        'insurance_name',
+                        'insurance_number'
                     ],
                     'application_date',
                     'status',
@@ -80,7 +91,8 @@ test('user can list their sticker applications', function () {
                             'id',
                             'name',
                             'file_path',
-                            'type'
+                            'type',
+                            'url'
                         ]
                     ]
                 ]

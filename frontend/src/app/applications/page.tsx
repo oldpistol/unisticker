@@ -19,7 +19,7 @@ import {
   Eye,
   Edit2
 } from 'lucide-react';
-import { ApplicationData, getApplications } from '@/services/applicationService';
+import { ApplicationData, getApplications, downloadDocument } from '@/services/applicationService';
 
 interface Column<T> {
   header: string;
@@ -80,6 +80,15 @@ function ApplicationsPage() {
     setSelectedYear('all');
   };
 
+  const handleDocumentDownload = async (documentId: number) => {
+    try {
+      await downloadDocument(documentId);
+    } catch (error) {
+      console.error('Failed to download document:', error);
+      // Add your error handling here
+    }
+  };
+
   const columns: Column<ApplicationData>[] = [
     { 
       header: 'No', 
@@ -135,6 +144,22 @@ function ApplicationsPage() {
           )}
         </div>
       )
+    },
+    {
+      header: 'Documents',
+      accessor: (application: ApplicationData) => (
+        <div className="flex flex-col gap-2">
+          {application.documents.map((doc) => (
+            <button
+              key={doc.id}
+              onClick={() => handleDocumentDownload(doc.id)}
+              className="text-blue-600 hover:text-blue-800 underline text-left"
+            >
+              {doc.name}
+            </button>
+          ))}
+        </div>
+      ),
     }
   ];
 

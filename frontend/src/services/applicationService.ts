@@ -83,3 +83,37 @@ export const getApplication = async (id: number): Promise<ApplicationData> => {
   
   return response.data.data;
 };
+
+export const downloadDocument = async (documentId: number): Promise<void> => {
+  const token = localStorage.getItem('auth_token');
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/documents/${documentId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to download document');
+  }
+
+  // Get filename from Content-Disposition header or use a default name
+  const contentDisposition = response.headers.get('Content-Disposition');
+  let filename = 'document';
+  if (contentDisposition) {
+    const match = contentDisposition.match(/filename="?([^"]+)"?/);
+    if (match) {
+      filename = match[1];
+    }
+  }
+
+  // Create blob from response and trigger download
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(url);
+};

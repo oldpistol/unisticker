@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 class StickerApplicationResource extends JsonResource
 {
@@ -44,6 +45,7 @@ class StickerApplicationResource extends JsonResource
                 'name' => $document->name,
                 'type' => $document->type,
                 'file_path' => $document->file_path,
+                'url' => Storage::disk('public')->url($document->file_path),
             ]),
             'created_at' => $this->created_at->format('Y-m-d H:i:s'),
             'updated_at' => $this->updated_at->format('Y-m-d H:i:s'),
