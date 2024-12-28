@@ -17,27 +17,27 @@ class StickerApplicationResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'user' => [
+            'user' => $this->user ? [
                 'id' => $this->user->id,
                 'name' => $this->user->name,
                 'email' => $this->user->email,
-                'matric_id' => $this->user->matric_id,
-                'phone_no' => $this->user->phone_no,
-            ],
-            'vehicle' => [
+                'matric_id' => $this->user->matric_id ?? '',
+                'phone_no' => $this->user->phone_no ?? '',
+            ] : null,
+            'vehicle' => $this->vehicle ? [
                 'id' => $this->vehicle->id,
                 'plate_no' => $this->vehicle->vehicle_plate_no,
                 'type' => $this->vehicle->vehicle_type,
                 'color' => $this->vehicle->vehicle_color,
-                'brand' => $this->vehicle->vehicleBrandModel->brand->name,
-                'model' => $this->vehicle->vehicleBrandModel->name,
+                'brand' => $this->vehicle->vehicleBrandModel?->brand?->name,
+                'model' => $this->vehicle->vehicleBrandModel?->name,
                 'driving_license_no' => $this->vehicle->driving_license_no,
                 'road_tax_expiry_date' => $this->vehicle->road_tax_expiry_date?->format('Y-m-d'),
                 'insurance_name' => $this->vehicle->insurance_name,
                 'insurance_number' => $this->vehicle->insurance_number,
-            ],
-            'application_date' => $this->application_date->format('Y-m-d H:i:s'),
-            'status' => $this->status->value,
+            ] : null,
+            'application_date' => $this->application_date?->format('Y-m-d H:i:s'),
+            'status' => $this->status?->value,
             'expiry_date' => $this->expiry_date?->format('Y-m-d'),
             'remarks' => $this->remarks,
             'documents' => $this->documents->map(fn ($document) => [

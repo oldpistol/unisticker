@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\User;
 use App\Models\VehicleBrandModel;
+use App\Models\StickerApplication;
 
 class Vehicle extends Model
 {
@@ -36,5 +37,10 @@ class Vehicle extends Model
     public function vehicleBrandModel()
     {
         return $this->belongsTo(VehicleBrandModel::class);
+    }
+    
+    public function stickerApplications()
+    {
+        return $this->hasMany(StickerApplication::class);
     }
 }

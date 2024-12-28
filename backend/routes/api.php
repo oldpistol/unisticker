@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\Auth\CheckController as AdminCheckController;
 use App\Http\Controllers\Admin\Auth\LoginController as AdminLoginController;
 use App\Http\Controllers\Admin\Auth\LogoutController as AdminLogoutController;
+use App\Http\Controllers\Admin\StickerApplication\RecentApplicationsController;
 use App\Http\Controllers\Auth\AuthCheckController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\GoogleController;
@@ -37,10 +38,18 @@ Route::group(['prefix' => 'auth'], function () {
 Route::group(['prefix' => 'admin/auth'], function () {
     Route::post('/login', AdminLoginController::class);
 
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware('auth:admin')->group(function () {
         Route::post('/logout', AdminLogoutController::class);
         Route::get('/check', AdminCheckController::class);
     });
+});
+
+// Admin routes
+Route::prefix('admin')->middleware(['auth:admin'])->group(function () {
+    Route::get('/recent-applications', RecentApplicationsController::class);
+    // Route::get('/sticker-applications', IndexController::class);
+    // Route::get('/sticker-applications/{id}', ApplicationShowController::class);
+    // Route::post('/sticker-applications', CreateController::class);
 });
 
 // Sticker Application Routes

@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { withAdminAuth } from '@/middleware/withAdminAuth';
 import AdminNavbar from '@/components/admin/AdminNavbar';
 import AdminMenuBar from '@/components/admin/AdminMenuBar';
@@ -31,14 +31,74 @@ interface RecentApplication {
 
 function AdminDashboard() {
   const pathname = usePathname();
+  const [recentApplications, setRecentApplications] = useState<RecentApplication[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Sample data for recent applications
-  const recentApplications: RecentApplication[] = [
-    { id: 1, studentId: "A20EC0001", vehicleNo: "ABC 1234", submittedDate: "2024-03-15", status: "Pending" },
-    { id: 2, studentId: "A20EC0002", vehicleNo: "DEF 5678", submittedDate: "2024-03-14", status: "Approved" },
-    { id: 3, studentId: "A20EC0003", vehicleNo: "GHI 9012", submittedDate: "2024-03-14", status: "Rejected" },
-    { id: 4, studentId: "A20EC0004", vehicleNo: "JKL 3456", submittedDate: "2024-03-13", status: "Pending" },
-  ];
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  useEffect(() => {
+    const fetchRecentApplications = async () => {
+      try {
+        const token = localStorage.getItem('admin_token');
+        if (!token) {
+          throw new Error('No authentication token found');
+        }
+
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/admin/recent-applications?page=${currentPage}&per_page=${itemsPerPage}`, 
+          {
+            headers: {
+              'Accept': 'application/json',
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            credentials: 'include'
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => null);
+          console.error('API Error:', {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorData
+          });
+          throw new Error(`Failed to fetch recent applications: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        
+        // Extract pagination data from Laravel's response
+        setTotalItems(result.meta.total);
+        setTotalPages(result.meta.last_page);
+        
+        // Transform the API response to match our interface
+        const transformedData = result.data.map((app: any) => ({
+          id: app.id,
+          studentId: app.user?.matric_id ?? '',
+          vehicleNo: app.vehicle?.plate_no ?? '',
+          submittedDate: app.created_at ? new Date(app.created_at).toISOString().split('T')[0] : '',
+          status: app.status ?? 'Pending'
+        }));
+        
+        setRecentApplications(transformedData);
+      } catch (error) {
+        if (error instanceof Error) {
+          setError(error.message);
+        } else {
+          setError('An unknown error occurred');
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchRecentApplications();
+  }, [currentPage, itemsPerPage]); // Re-fetch when page or items per page changes
 
   const columns: Column<RecentApplication>[] = [
     { header: 'Student ID', accessor: 'studentId' },
@@ -46,17 +106,29 @@ function AdminDashboard() {
     { header: 'Submitted Date', accessor: 'submittedDate' },
     { 
       header: 'Status', 
-      accessor: (application: RecentApplication) => (
-        <span className={`px-4 py-1.5 inline-flex text-sm font-medium rounded-full ${
-          application.status === "Approved" 
-            ? "bg-green-50 text-green-700 border border-green-100"
-            : application.status === "Pending"
-            ? "bg-yellow-50 text-yellow-700 border border-yellow-100"
-            : "bg-red-50 text-red-700 border border-red-100"
-        }`}>
-          {application.status}
-        </span>
-      )
+      accessor: (application: RecentApplication) => {
+        // Convert status to Title Case
+        const titleCaseStatus = application.status.charAt(0).toUpperCase() + application.status.slice(1).toLowerCase();
+        
+        let statusStyle = '';
+        switch (application.status.toLowerCase()) {
+          case 'pending':
+            statusStyle = 'bg-amber-50 text-amber-700';
+            break;
+          case 'approved':
+            statusStyle = 'bg-emerald-50 text-emerald-700';
+            break;
+          case 'rejected':
+            statusStyle = 'bg-rose-50 text-rose-600';
+            break;
+        }
+        
+        return (
+          <span className={`px-4 py-1.5 inline-flex text-sm font-medium rounded-full ${statusStyle}`}>
+            {titleCaseStatus}
+          </span>
+        );
+      }
     },
     {
       header: 'Action',
@@ -72,11 +144,6 @@ function AdminDashboard() {
       )
     }
   ];
-
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
-  const totalItems = 50;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -151,7 +218,13 @@ function AdminDashboard() {
               </Link>
             </div>
 
-            <Table data={recentApplications} columns={columns} />
+            {isLoading ? (
+              <div className="text-center py-4">Loading...</div>
+            ) : error ? (
+              <div className="text-center text-red-600 py-4">{error}</div>
+            ) : (
+              <Table data={recentApplications} columns={columns} />
+            )}
 
             <Pagination
               currentPage={currentPage}

@@ -30,13 +30,6 @@ client = OpenAI(
 
 # System prompt template
 SYSTEM_PROMPT_TEMPLATE = """Hi {name}! 👋
-
-I can help you with:
-- Application process
-- Documents needed
-- Payment & collection
-- Rules
-
 Ask me anything about UTM vehicle sticker application."""
 
 # Load and parse guide content
