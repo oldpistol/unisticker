@@ -1,15 +1,16 @@
 'use client';
 import { withAdminAuth } from '@/middleware/withAdminAuth';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AdminNavbar from '@/components/admin/AdminNavbar';
 import AdminMenuBar from '@/components/admin/AdminMenuBar';
 import { 
   Mail, 
   MessageSquare, 
-  Save,
   AlertCircle,
   CheckCircle
 } from 'lucide-react';
+import { getSettings, updateSettings, sendTestEmail, sendTestSms } from '@/services/settings';
+import type { EmailGatewayConfig, SmsGatewayConfig } from '@/services/settings';
 
 interface EmailConfig {
   host: string;
@@ -18,7 +19,7 @@ interface EmailConfig {
   password: string;
   fromEmail: string;
   fromName: string;
-  encryption: 'TLS' | 'SSL' | 'None';
+  encryption: 'TLS' | 'SSL' | 'NONE';
 }
 
 interface SMSConfig {
@@ -30,56 +31,108 @@ interface SMSConfig {
 
 function AdminSettings() {
   const [emailConfig, setEmailConfig] = useState<EmailConfig>({
-    host: 'smtp.gmail.com',
-    port: '587',
+    host: '',
+    port: '',
     username: '',
     password: '',
-    fromEmail: 'noreply@unisticker.com',
-    fromName: 'UniSticker System',
+    fromEmail: '',
+    fromName: '',
     encryption: 'TLS'
   });
 
   const [smsConfig, setSMSConfig] = useState<SMSConfig>({
     apiKey: '',
     apiSecret: '',
-    senderId: 'UniSticker',
-    endpoint: 'https://api.sms-gateway.com/v1/messages'
+    senderId: '',
+    endpoint: ''
   });
 
   const [isTestingEmail, setIsTestingEmail] = useState(false);
   const [isTestingSMS, setIsTestingSMS] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [error, setError] = useState('');
 
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const response = await getSettings();
+        if (response.email_gateway) {
+          setEmailConfig({
+            host: response.email_gateway.smtp_host,
+            port: response.email_gateway.smtp_port.toString(),
+            username: response.email_gateway.username || '',
+            password: response.email_gateway.password || '',
+            fromEmail: response.email_gateway.from_email,
+            fromName: response.email_gateway.from_name,
+            encryption: response.email_gateway.encryption
+          });
+        }
+        if (response.sms_gateway) {
+          setSMSConfig({
+            apiKey: response.sms_gateway.api_key,
+            apiSecret: response.sms_gateway.api_secret,
+            senderId: response.sms_gateway.sender_id,
+            endpoint: response.sms_gateway.api_endpoint
+          });
+        }
+      } catch (err) {
+        setError('Failed to load settings');
+        setTimeout(() => setError(''), 3000);
+      }
+    };
+    fetchSettings();
+  }, []);
+
   const handleEmailConfigSave = async () => {
+    setIsSaving(true);
     try {
-      // Add your save logic here
-      console.log('Saving email config:', emailConfig);
+      const emailGatewayConfig: EmailGatewayConfig = {
+        smtp_host: emailConfig.host,
+        smtp_port: parseInt(emailConfig.port),
+        username: emailConfig.username,
+        password: emailConfig.password,
+        from_email: emailConfig.fromEmail,
+        from_name: emailConfig.fromName,
+        encryption: emailConfig.encryption
+      };
+
+      await updateSettings({ email_gateway: emailGatewayConfig });
       setSuccessMessage('Email configuration saved successfully');
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err) {
       setError('Failed to save email configuration');
       setTimeout(() => setError(''), 3000);
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleSMSConfigSave = async () => {
+    setIsSaving(true);
     try {
-      // Add your save logic here
-      console.log('Saving SMS config:', smsConfig);
+      const smsGatewayConfig: SmsGatewayConfig = {
+        api_key: smsConfig.apiKey,
+        api_secret: smsConfig.apiSecret,
+        sender_id: smsConfig.senderId,
+        api_endpoint: smsConfig.endpoint
+      };
+
+      await updateSettings({ sms_gateway: smsGatewayConfig });
       setSuccessMessage('SMS configuration saved successfully');
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err) {
       setError('Failed to save SMS configuration');
       setTimeout(() => setError(''), 3000);
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleTestEmail = async () => {
     setIsTestingEmail(true);
     try {
-      // Add your email test logic here
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API call
+      await sendTestEmail();
       setSuccessMessage('Test email sent successfully');
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err) {
@@ -93,8 +146,7 @@ function AdminSettings() {
   const handleTestSMS = async () => {
     setIsTestingSMS(true);
     try {
-      // Add your SMS test logic here
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API call
+      await sendTestSms();
       setSuccessMessage('Test SMS sent successfully');
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err) {
@@ -234,7 +286,7 @@ function AdminSettings() {
                 >
                   <option value="TLS">TLS</option>
                   <option value="SSL">SSL</option>
-                  <option value="None">None</option>
+                  <option value="NONE">None</option>
                 </select>
               </div>
             </div>
@@ -249,9 +301,10 @@ function AdminSettings() {
               </button>
               <button
                 onClick={handleEmailConfigSave}
+                disabled={isSaving}
                 className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
               >
-                Save Email Configuration
+                {isSaving ? 'Saving...' : 'Save Email Configuration'}
               </button>
             </div>
           </div>
@@ -323,9 +376,10 @@ function AdminSettings() {
               </button>
               <button
                 onClick={handleSMSConfigSave}
+                disabled={isSaving}
                 className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
               >
-                Save SMS Configuration
+                {isSaving ? 'Saving...' : 'Save SMS Configuration'}
               </button>
             </div>
           </div>

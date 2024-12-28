@@ -2,17 +2,14 @@
 import { useState, useEffect } from 'react';
 import AdminNavbar from '@/components/admin/AdminNavbar';
 import AdminMenuBar from '@/components/admin/AdminMenuBar';
-import Table from '@/components/Table';
-import Pagination from '@/components/Pagination';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { 
   Search, 
   Filter,
-  Download,
   Mail,
   Phone,
-  Tag,
-  Building2
+  Tag
 } from 'lucide-react';
 
 interface Column<T> {
@@ -24,44 +21,67 @@ interface AdminData {
   id: number;
   name: string;
   email: string;
-  phoneNumber: string;
-  role: "Super Admin" | "Admin" | "Manager";
-  status: "Active" | "Inactive";
-  lastLogin: string;
+  phone_no: string;
+  role: string;
+  status: 'Active' | 'Blocked';
 }
 
-const mockAdmins: AdminData[] = [
-  {
-    id: 1,
-    name: "Admin User",
-    email: "admin@example.com",
-    phoneNumber: "012-3456789",
-    role: "Super Admin",
-    status: "Active",
-    lastLogin: "2024-03-15 14:30"
-  },
-  // Add more mock data as needed
-];
-
 export default function AdminsManagement() {
+  const [admins, setAdmins] = useState<AdminData[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState('');
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const router = useRouter();
 
-  const itemsPerPage = 10;
-  const totalItems = mockAdmins.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const fetchAdmins = async () => {
+    try {
+      setIsLoading(true);
+      const token = localStorage.getItem('admin_token');
+      
+      if (!token) {
+        router.push('/admin/login');
+        return;
+      }
+
+      const queryParams = new URLSearchParams({
+        page: currentPage.toString(),
+        per_page: '10',
+        ...(searchTerm && { search: searchTerm })
+      });
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/admins?${queryParams}`,
+        {
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch admins');
+      }
+
+      const data = await response.json();
+      setAdmins(data.data || []);
+      setTotalItems(data.meta?.total || 0);
+      setTotalPages(data.meta?.last_page || 1);
+      setLastUpdated(new Date().toLocaleString());
+    } catch (error) {
+      console.error('Error fetching admins:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    setIsLoading(false);
-    setLastUpdated(new Date().toLocaleString());
-  }, []);
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
+    fetchAdmins();
+  }, [currentPage, searchTerm]);
 
   const columns: Column<AdminData>[] = [
     { 
@@ -75,7 +95,7 @@ export default function AdminsManagement() {
           </div>
           <div className="text-sm text-gray-500 flex items-center">
             <Phone className="h-4 w-4 mr-1" />
-            {admin.phoneNumber}
+            {admin.phone_no ? admin.phone_no : '-'}
           </div>
         </div>
       )
@@ -89,16 +109,12 @@ export default function AdminsManagement() {
       )
     },
     { 
-      header: 'Last Login', 
-      accessor: 'lastLogin'
-    },
-    { 
       header: 'Status', 
       accessor: (admin: AdminData) => (
         <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-          admin.status === "Active" 
-            ? "bg-green-50 text-green-700 ring-1 ring-green-600/20"
-            : "bg-gray-50 text-gray-700 ring-1 ring-gray-600/20"
+          admin.status === 'Blocked'
+            ? "bg-red-50 text-red-700 ring-1 ring-red-600/20"
+            : "bg-green-50 text-green-700 ring-1 ring-green-600/20"
         }`}>
           {admin.status}
         </span>
@@ -124,6 +140,18 @@ export default function AdminsManagement() {
       )
     }
   ];
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50/30">
+        <AdminNavbar />
+        <AdminMenuBar />
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div>Loading...</div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50/30">
@@ -195,58 +223,97 @@ export default function AdminsManagement() {
                     <select className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
                       <option value="all">All Status</option>
                       <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
+                      <option value="blocked">Blocked</option>
                     </select>
                   </div>
-
-                  {/* Role Filter */}
-                  <div className="space-y-1.5">
-                    <label className="flex items-center text-sm text-gray-500 font-medium">
-                      <Building2 className="h-4 w-4 mr-2" />
-                      Role
-                    </label>
-                    <select className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
-                      <option value="all">All Roles</option>
-                      <option value="super_admin">Super Admin</option>
-                      <option value="admin">Admin</option>
-                      <option value="manager">Manager</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="mt-6 flex justify-end space-x-3">
-                  <button 
-                    className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
-                    onClick={() => {/* Reset filters logic */}}
-                  >
-                    Reset
-                  </button>
-                  <button 
-                    className="px-6 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                    onClick={() => {/* Apply filters logic */}}
-                  >
-                    Apply Filters
-                  </button>
                 </div>
               </div>
             </div>
           )}
         </div>
 
-        {/* Admins Table */}
-        <Table data={mockAdmins} columns={columns} />
-        
-        <div className="mt-6">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={totalItems}
-            itemsPerPage={itemsPerPage}
-            onPageChange={setCurrentPage}
-          />
+        {/* Table */}
+        <div className="bg-white shadow overflow-hidden sm:rounded-lg border border-gray-200">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                {columns.map((column, index) => (
+                  <th
+                    key={index}
+                    scope="col"
+                    className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
+                      index === 0 ? 'w-2/5' : ''
+                    }`}
+                  >
+                    {column.header}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {admins.map((admin, index) => (
+                <tr key={admin.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                  {columns.map((column, colIndex) => (
+                    <td key={colIndex} className="px-6 py-4 whitespace-nowrap">
+                      {typeof column.accessor === 'function'
+                        ? column.accessor(admin)
+                        : admin[column.accessor]}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-5 flex items-center justify-between">
+            <div className="flex-1 flex justify-between sm:hidden">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              >
+                Next
+              </button>
+            </div>
+            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700">
+                  Showing page <span className="font-medium">{currentPage}</span> of{' '}
+                  <span className="font-medium">{totalPages}</span>
+                </p>
+              </div>
+              <div>
+                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                  >
+                    Next
+                  </button>
+                </nav>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
-} 
+}

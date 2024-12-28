@@ -17,10 +17,10 @@ import {
 interface AdminFormData {
   name: string;
   email: string;
-  phoneNumber: string;
-  role: 'Super Admin' | 'Admin' | 'Manager';
+  phone: string;
+  role: 'Super Admin' | 'Admin';
   password: string;
-  confirmPassword: string;
+  password_confirmation: string;
 }
 
 export default function NewAdmin() {
@@ -31,16 +31,16 @@ export default function NewAdmin() {
   const [formData, setFormData] = useState<AdminFormData>({
     name: '',
     email: '',
-    phoneNumber: '',
+    phone: '',
     role: 'Admin',
     password: '',
-    confirmPassword: ''
+    password_confirmation: ''
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (formData.password !== formData.confirmPassword) {
+    if (formData.password !== formData.password_confirmation) {
       setError('Passwords do not match');
       return;
     }
@@ -53,11 +53,31 @@ export default function NewAdmin() {
     setError('');
 
     try {
-      // Add your admin creation logic here
-      console.log('Creating new admin:', formData);
+      const token = localStorage.getItem('admin_token');
+      
+      if (!token) {
+        router.push('/admin/login');
+        return;
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/admins`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'Failed to create admin account');
+      }
+
       router.push('/admin/admins');
     } catch (err) {
-      setError('Failed to create admin account');
+      setError(err instanceof Error ? err.message : 'Failed to create admin account');
     } finally {
       setIsLoading(false);
       setShowConfirmModal(false);
@@ -144,15 +164,14 @@ export default function NewAdmin() {
                 </div>
 
                 <div>
-                  <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
                     Phone Number
                   </label>
                   <input
                     type="tel"
-                    id="phoneNumber"
-                    required
-                    value={formData.phoneNumber}
-                    onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                    id="phone"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
                   />
                 </div>
@@ -170,7 +189,6 @@ export default function NewAdmin() {
                   >
                     <option value="Admin">Admin</option>
                     <option value="Super Admin">Super Admin</option>
-                    <option value="Manager">Manager</option>
                   </select>
                 </div>
               </div>
@@ -199,15 +217,15 @@ export default function NewAdmin() {
                 </div>
 
                 <div>
-                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="password_confirmation" className="block text-sm font-medium text-gray-700">
                     Confirm Password
                   </label>
                   <input
                     type="password"
-                    id="confirmPassword"
+                    id="password_confirmation"
                     required
-                    value={formData.confirmPassword}
-                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    value={formData.password_confirmation}
+                    onChange={(e) => setFormData({ ...formData, password_confirmation: e.target.value })}
                     className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
                   />
                 </div>
@@ -264,4 +282,4 @@ export default function NewAdmin() {
       </main>
     </div>
   );
-} 
+}

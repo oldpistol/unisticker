@@ -21,7 +21,10 @@ class Admin extends Authenticatable
         'name',
         'email',
         'password',
+        'phone',
         'role',
+        'status',
+        'blocked_at'
     ];
 
     /**
@@ -42,5 +45,16 @@ class Admin extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'blocked_at' => 'datetime'
     ];
+
+    /**
+     * Get the status based on blocked_at value.
+     */
+    protected $appends = ['status'];
+
+    public function getStatusAttribute(): string
+    {
+        return $this->blocked_at ? 'Blocked' : 'Active';
+    }
 }

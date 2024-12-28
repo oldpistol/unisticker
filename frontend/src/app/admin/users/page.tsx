@@ -2,17 +2,14 @@
 import { useState, useEffect } from 'react';
 import AdminNavbar from '@/components/admin/AdminNavbar';
 import AdminMenuBar from '@/components/admin/AdminMenuBar';
-import Table from '@/components/Table';
-import Pagination from '@/components/Pagination';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { 
   Search, 
   Filter,
   Download,
   Mail,
-  Phone,
-  Tag,
-  Building2
+  Phone
 } from 'lucide-react';
 
 interface Column<T> {
@@ -24,44 +21,116 @@ interface UserData {
   id: number;
   name: string;
   email: string;
-  phoneNumber: string;
-  faculty: string;
-  status: "Active" | "Inactive" | "Suspended";
-  lastLogin: string;
+  phone_no: string;
+  status: 'Active' | 'Blocked';
 }
 
-const mockUsers: UserData[] = [
-  {
-    id: 1,
-    name: "John Doe",
-    email: "john@example.com",
-    phoneNumber: "012-3456789",
-    faculty: "Engineering",
-    status: "Active",
-    lastLogin: "2024-03-15 14:30"
-  },
-  // Add more mock data as needed
-];
-
 export default function UsersManagement() {
+  const [users, setUsers] = useState<UserData[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState('');
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const router = useRouter();
 
-  const itemsPerPage = 10;
-  const totalItems = mockUsers.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const fetchUsers = async () => {
+    try {
+      setIsLoading(true);
+      const token = localStorage.getItem('admin_token');
+      
+      if (!token) {
+        router.push('/admin/login');
+        return;
+      }
+
+      const queryParams = new URLSearchParams({
+        page: currentPage.toString(),
+        per_page: '10',
+        ...(searchTerm && { search: searchTerm })
+      });
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/users?${queryParams}`,
+        {
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch users');
+      }
+
+      const data = await response.json();
+      setUsers(data.data || []);
+      setTotalItems(data.meta?.total || 0);
+      setTotalPages(data.meta?.last_page || 1);
+      setLastUpdated(new Date().toLocaleString());
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      const token = localStorage.getItem('admin_token');
+      
+      if (!token) {
+        router.push('/admin/login');
+        return;
+      }
+
+      const queryParams = new URLSearchParams({
+        ...(searchTerm && { search: searchTerm })
+      });
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/users/export?${queryParams}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Export failed');
+      }
+
+      const contentDisposition = response.headers.get('Content-Disposition');
+      const filename = contentDisposition
+        ? contentDisposition.split('filename=')[1].replace(/"/g, '')
+        : 'users.csv';
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error exporting users:', error);
+    }
+  };
 
   useEffect(() => {
-    setIsLoading(false);
-    setLastUpdated(new Date().toLocaleString());
-  }, []);
+    fetchUsers();
+  }, [currentPage, searchTerm]);
 
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
+  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+    setCurrentPage(1);
+  };
 
   const columns: Column<UserData>[] = [
     { 
@@ -75,32 +144,18 @@ export default function UsersManagement() {
           </div>
           <div className="text-sm text-gray-500 flex items-center">
             <Phone className="h-4 w-4 mr-1" />
-            {user.phoneNumber}
+            {user.phone_no ? user.phone_no : '-'}
           </div>
         </div>
       )
     },
     { 
-      header: 'Faculty', 
-      accessor: (user: UserData) => (
-        <div className="text-sm text-gray-900">
-          {user.faculty}
-        </div>
-      )
-    },
-    { 
-      header: 'Last Login', 
-      accessor: 'lastLogin'
-    },
-    { 
       header: 'Status', 
       accessor: (user: UserData) => (
         <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-          user.status === "Active" 
-            ? "bg-green-50 text-green-700 ring-1 ring-green-600/20"
-            : user.status === "Inactive"
-            ? "bg-gray-50 text-gray-700 ring-1 ring-gray-600/20"
-            : "bg-red-50 text-red-700 ring-1 ring-red-600/20"
+          user.status === 'Blocked'
+            ? "bg-red-50 text-red-700 ring-1 ring-red-600/20"
+            : "bg-green-50 text-green-700 ring-1 ring-green-600/20"
         }`}>
           {user.status}
         </span>
@@ -138,15 +193,13 @@ export default function UsersManagement() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-semibold text-gray-900">Users Management</h1>
-              <div className="mt-1 flex items-center text-sm text-gray-500">
-                <span>Total {totalItems} users</span>
-                <span className="mx-2">•</span>
-                <span>Updated {lastUpdated}</span>
-              </div>
+              <p className="mt-1 text-sm text-gray-500">
+                Total {totalItems} users • Updated {lastUpdated}
+              </p>
             </div>
             <button
+              onClick={handleExport}
               className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              onClick={() => {/* Add export logic */}}
             >
               <Download className="h-4 w-4 mr-2" />
               Export Users
@@ -154,7 +207,7 @@ export default function UsersManagement() {
           </div>
         </div>
 
-        {/* Search and Filters */}
+        {/* Search */}
         <div className="mb-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
@@ -166,91 +219,76 @@ export default function UsersManagement() {
                 placeholder="Search by name, email, or phone number"
                 className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={handleSearch}
               />
             </div>
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => setIsFilterOpen(!isFilterOpen)}
-                className={`inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium
-                  ${isFilterOpen 
-                    ? 'border-indigo-500 text-indigo-600 bg-indigo-50 hover:bg-indigo-100' 
-                    : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50'
-                  } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
-              >
-                <Filter className="h-4 w-4 mr-2" />
-                Filters
-              </button>
-            </div>
           </div>
-
-          {/* Filter Panel */}
-          {isFilterOpen && (
-            <div className="mt-4 bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="p-6">
-                <div className="grid grid-cols-3 gap-6">
-                  {/* Status Filter */}
-                  <div className="space-y-1.5">
-                    <label className="flex items-center text-sm text-gray-500 font-medium">
-                      <Tag className="h-4 w-4 mr-2" />
-                      Status
-                    </label>
-                    <select className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
-                      <option value="all">All Status</option>
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
-                      <option value="suspended">Suspended</option>
-                    </select>
-                  </div>
-
-                  {/* Faculty Filter */}
-                  <div className="space-y-1.5">
-                    <label className="flex items-center text-sm text-gray-500 font-medium">
-                      <Building2 className="h-4 w-4 mr-2" />
-                      Faculty
-                    </label>
-                    <select className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
-                      <option value="all">All Faculties</option>
-                      <option value="engineering">Engineering</option>
-                      <option value="science">Science</option>
-                      <option value="computing">Computing</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="mt-6 flex justify-end space-x-3">
-                  <button 
-                    className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
-                    onClick={() => {/* Reset filters logic */}}
-                  >
-                    Reset
-                  </button>
-                  <button 
-                    className="px-6 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                    onClick={() => {/* Apply filters logic */}}
-                  >
-                    Apply Filters
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Users Table */}
-        <Table data={mockUsers} columns={columns} />
-        
-        <div className="mt-6">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={totalItems}
-            itemsPerPage={itemsPerPage}
-            onPageChange={setCurrentPage}
-          />
-        </div>
+        {isLoading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+          </div>
+        ) : (
+          <>
+            <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+              <div className="min-w-full divide-y divide-gray-200">
+                <div className="bg-gray-50 border-b border-gray-200">
+                  <div className="grid grid-cols-[2fr,1fr,1fr] gap-4 px-6 py-3">
+                    {columns.map((column, index) => (
+                      <div key={index} className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        {column.header}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="bg-white divide-y divide-gray-200">
+                  {users.map((user) => (
+                    <div key={user.id} className="grid grid-cols-[2fr,1fr,1fr] gap-4 px-6 py-4">
+                      {columns.map((column, index) => (
+                        <div key={index}>
+                          {typeof column.accessor === 'function'
+                            ? column.accessor(user)
+                            : user[column.accessor]}
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            {totalPages > 1 && (
+              <div className="mt-4 flex justify-center">
+                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
+                      currentPage === 1
+                        ? 'text-gray-300 cursor-not-allowed'
+                        : 'text-gray-500 hover:bg-gray-50'
+                    }`}
+                  >
+                    Previous
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
+                      currentPage === totalPages
+                        ? 'text-gray-300 cursor-not-allowed'
+                        : 'text-gray-500 hover:bg-gray-50'
+                    }`}
+                  >
+                    Next
+                  </button>
+                </nav>
+              </div>
+            )}
+          </>
+        )}
       </main>
     </div>
   );
-} 
+}

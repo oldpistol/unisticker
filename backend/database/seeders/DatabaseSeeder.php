@@ -14,7 +14,10 @@ class DatabaseSeeder extends Seeder
         $this->call([
             AdminSeeder::class,
             VehicleBrandSeeder::class,
-            VehicleBrandModelSeeder::class
+            VehicleBrandModelSeeder::class,
+            UserSeeder::class,
+            VehicleSeeder::class,
+            StickerApplicationSeeder::class,
         ]);
     }
 }

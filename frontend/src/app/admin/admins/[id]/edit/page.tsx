@@ -17,8 +17,9 @@ import {
 interface AdminFormData {
   name: string;
   email: string;
-  phoneNumber: string;
-  role: "Super Admin" | "Admin" | "Manager";
+  phone: string;
+  role: "Super Admin" | "Admin";
+  status: "Active" | "Blocked";
 }
 
 export default function EditAdmin() {
@@ -30,31 +31,49 @@ export default function EditAdmin() {
   const [formData, setFormData] = useState<AdminFormData>({
     name: '',
     email: '',
-    phoneNumber: '',
-    role: 'Admin'
+    phone: '',
+    role: 'Admin',
+    status: 'Active'
   });
 
   useEffect(() => {
     const fetchAdmin = async () => {
       try {
-        // Simulate API call
-        const response = await Promise.resolve({
-          name: "Admin User",
-          email: "admin@example.com",
-          phoneNumber: "012-3456789",
-          role: "Admin" as const
-        });
+        const token = localStorage.getItem('admin_token');
         
-        setFormData(response);
-        setIsLoading(false);
+        if (!token) {
+          router.push('/admin/login');
+          return;
+        }
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/admins/${params.id}`, {
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch admin details');
+        }
+
+        const data = await response.json();
+        setFormData({
+          name: data.name,
+          email: data.email,
+          phone: data.phone || '',
+          role: data.role,
+          status: data.status
+        });
       } catch (err) {
         setError('Failed to fetch admin details');
+      } finally {
         setIsLoading(false);
       }
     };
 
     fetchAdmin();
-  }, [params.id]);
+  }, [params.id, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,18 +82,48 @@ export default function EditAdmin() {
 
   const handleConfirmUpdate = async () => {
     try {
-      // Add your update logic here
-      console.log('Updating admin with data:', formData);
+      const token = localStorage.getItem('admin_token');
+      
+      if (!token) {
+        router.push('/admin/login');
+        return;
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/admins/${params.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'Failed to update admin');
+      }
+
       router.push(`/admin/admins/${params.id}`);
     } catch (err) {
-      setError('Failed to update admin');
+      setError(err instanceof Error ? err.message : 'Failed to update admin');
     } finally {
       setShowConfirmModal(false);
     }
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen bg-gray-50/30">
+        <AdminNavbar />
+        <AdminMenuBar />
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-gray-500">Loading...</div>
+          </div>
+        </main>
+      </div>
+    );
   }
 
   return (
@@ -132,6 +181,7 @@ export default function EditAdmin() {
                   <input
                     type="text"
                     id="name"
+                    required
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
@@ -145,6 +195,7 @@ export default function EditAdmin() {
                   <input
                     type="email"
                     id="email"
+                    required
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
@@ -152,14 +203,14 @@ export default function EditAdmin() {
                 </div>
 
                 <div>
-                  <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
                     Phone Number
                   </label>
                   <input
                     type="tel"
-                    id="phoneNumber"
-                    value={formData.phoneNumber}
-                    onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                    id="phone"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
                   />
                 </div>
@@ -170,13 +221,29 @@ export default function EditAdmin() {
                   </label>
                   <select
                     id="role"
+                    required
                     value={formData.role}
                     onChange={(e) => setFormData({ ...formData, role: e.target.value as AdminFormData['role'] })}
                     className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
                   >
                     <option value="Admin">Admin</option>
                     <option value="Super Admin">Super Admin</option>
-                    <option value="Manager">Manager</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="status" className="block text-sm font-medium text-gray-700">
+                    Status
+                  </label>
+                  <select
+                    id="status"
+                    required
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value as AdminFormData['status'] })}
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Blocked">Blocked</option>
                   </select>
                 </div>
               </div>
@@ -229,4 +296,4 @@ export default function EditAdmin() {
       </main>
     </div>
   );
-} 
+}

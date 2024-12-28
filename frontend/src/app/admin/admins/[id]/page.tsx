@@ -11,7 +11,6 @@ import {
   Mail,
   Phone,
   Shield,
-  Clock,
   AlertCircle
 } from 'lucide-react';
 
@@ -19,64 +18,149 @@ interface AdminDetail {
   id: number;
   name: string;
   email: string;
-  phoneNumber: string;
-  role: "Super Admin" | "Admin" | "Manager";
-  status: "Active" | "Inactive";
-  lastLogin: string;
-  registeredDate: string;
-  activityLog: {
-    action: string;
-    date: string;
-    details?: string;
-  }[];
+  phone: string;
+  role: "Super Admin" | "Admin";
+  status: "Active" | "Blocked";
+  blocked_at: string | null;
 }
-
-const mockAdminDetail: AdminDetail = {
-  id: 1,
-  name: "Admin User",
-  email: "admin@example.com",
-  phoneNumber: "012-3456789",
-  role: "Super Admin",
-  status: "Active",
-  lastLogin: "2024-03-15 14:30:00",
-  registeredDate: "2023-09-01",
-  activityLog: [
-    { action: "Login", date: "2024-03-15 14:30:00" },
-    { action: "Updated User Status", date: "2024-03-14 10:15:00", details: "Changed user A20EC0001 status to Active" },
-    { action: "Approved Application", date: "2024-03-14 09:20:00", details: "Approved vehicle permit application #123" }
-  ]
-};
 
 export default function AdminDetail() {
   const router = useRouter();
   const params = useParams();
   const [admin, setAdmin] = useState<AdminDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [showStatusModal, setShowStatusModal] = useState(false);
-  const [newStatus, setNewStatus] = useState<AdminDetail['status']>(mockAdminDetail.status);
+  const [error, setError] = useState('');
+  const [showBlockModal, setShowBlockModal] = useState(false);
+  const [showUnblockModal, setShowUnblockModal] = useState(false);
 
   useEffect(() => {
-    setAdmin(mockAdminDetail);
-    setIsLoading(false);
-  }, [params.id]);
+    const fetchAdmin = async () => {
+      try {
+        const token = localStorage.getItem('admin_token');
+        
+        if (!token) {
+          router.push('/admin/login');
+          return;
+        }
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/admins/${params.id}`, {
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch admin details');
+        }
+
+        const data = await response.json();
+        setAdmin(data);
+      } catch (err) {
+        setError('Failed to fetch admin details');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAdmin();
+  }, [params.id, router]);
+
+  const handleBlock = async () => {
+    try {
+      const token = localStorage.getItem('admin_token');
+      
+      if (!token) {
+        router.push('/admin/login');
+        return;
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/admins/${params.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          ...admin,
+          status: 'Blocked'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to block admin');
+      }
+
+      const data = await response.json();
+      setAdmin(data);
+      setShowBlockModal(false);
+    } catch (error) {
+      setError('Failed to block admin');
+    }
+  };
+
+  const handleUnblock = async () => {
+    try {
+      const token = localStorage.getItem('admin_token');
+      
+      if (!token) {
+        router.push('/admin/login');
+        return;
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/admins/${params.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          ...admin,
+          status: 'Active'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to unblock admin');
+      }
+
+      const data = await response.json();
+      setAdmin(data);
+      setShowUnblockModal(false);
+    } catch (error) {
+      setError('Failed to unblock admin');
+    }
+  };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen bg-gray-50/30">
+        <AdminNavbar />
+        <AdminMenuBar />
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-gray-500">Loading...</div>
+          </div>
+        </main>
+      </div>
+    );
   }
 
   if (!admin) {
-    return <div>Admin not found</div>;
+    return (
+      <div className="min-h-screen bg-gray-50/30">
+        <AdminNavbar />
+        <AdminMenuBar />
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-red-500">Admin not found</div>
+          </div>
+        </main>
+      </div>
+    );
   }
-
-  const handleStatusUpdate = async () => {
-    try {
-      console.log('Updating status to:', newStatus);
-      setShowStatusModal(false);
-      router.refresh();
-    } catch (error) {
-      console.error('Error updating status:', error);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gray-50/30">
@@ -99,7 +183,7 @@ export default function AdminDetail() {
                   Admin Details
                 </h1>
                 <p className="mt-1 text-sm text-gray-500">
-                  Admin #{admin.id} • Registered on {new Date(admin.registeredDate).toLocaleDateString()}
+                  Admin #{admin.id}
                 </p>
               </div>
             </div>
@@ -110,15 +194,35 @@ export default function AdminDetail() {
               >
                 Edit Admin
               </Link>
-              <button
-                onClick={() => setShowStatusModal(true)}
-                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
-              >
-                Update Status
-              </button>
+              {admin.status === 'Active' ? (
+                <button
+                  onClick={() => setShowBlockModal(true)}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
+                >
+                  Block
+                </button>
+              ) : (
+                <button
+                  onClick={() => setShowUnblockModal(true)}
+                  className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700"
+                >
+                  Unblock
+                </button>
+              )}
             </div>
           </div>
         </div>
+
+        {error && (
+          <div className="mb-6 rounded-md bg-red-50 p-4">
+            <div className="flex">
+              <AlertCircle className="h-5 w-5 text-red-400" />
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">{error}</h3>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-3 gap-6">
           {/* Main Content */}
@@ -140,7 +244,7 @@ export default function AdminDetail() {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Phone Number</p>
-                  <p className="mt-1 text-sm font-medium text-gray-900">{admin.phoneNumber}</p>
+                  <p className="mt-1 text-sm font-medium text-gray-900">{admin.phone || '-'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Role</p>
@@ -148,9 +252,7 @@ export default function AdminDetail() {
                     <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                       admin.role === "Super Admin" 
                         ? "bg-purple-50 text-purple-700 ring-1 ring-purple-600/20"
-                        : admin.role === "Admin"
-                        ? "bg-blue-50 text-blue-700 ring-1 ring-blue-600/20"
-                        : "bg-gray-50 text-gray-700 ring-1 ring-gray-600/20"
+                        : "bg-blue-50 text-blue-700 ring-1 ring-blue-600/20"
                     }`}>
                       <Shield className="w-4 h-4 mr-1" />
                       {admin.role}
@@ -162,98 +264,76 @@ export default function AdminDetail() {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div>
             {/* Status Card */}
             <div className="bg-white shadow-sm rounded-lg p-6">
               <h2 className="text-lg font-medium text-gray-900 mb-4">Status</h2>
               <span className={`px-3 py-1 inline-flex text-sm font-medium rounded-full ${
                 admin.status === "Active" 
                   ? "bg-green-50 text-green-700 ring-1 ring-green-600/20"
-                  : "bg-gray-50 text-gray-700 ring-1 ring-gray-600/20"
+                  : "bg-red-50 text-red-700 ring-1 ring-red-600/20"
               }`}>
                 {admin.status}
               </span>
-              <p className="mt-2 text-sm text-gray-500">
-                Last login: {new Date(admin.lastLogin).toLocaleString()}
-              </p>
-            </div>
-
-            {/* Activity Log */}
-            <div className="bg-white shadow-sm rounded-lg p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-                <Clock className="w-5 h-5 mr-2 text-gray-400" />
-                Activity Log
-              </h2>
-              <div className="flow-root">
-                <ul role="list" className="-mb-8">
-                  {admin.activityLog.map((activity, activityIdx) => (
-                    <li key={activityIdx}>
-                      <div className="relative pb-8">
-                        {activityIdx !== admin.activityLog.length - 1 ? (
-                          <span
-                            className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200"
-                            aria-hidden="true"
-                          />
-                        ) : null}
-                        <div className="relative flex space-x-3">
-                          <div>
-                            <span className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center ring-8 ring-white">
-                              <Clock className="h-4 w-4 text-gray-500" />
-                            </span>
-                          </div>
-                          <div className="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
-                            <div>
-                              <p className="text-sm text-gray-500">{activity.action}</p>
-                              {activity.details && (
-                                <p className="mt-1 text-sm text-gray-500">{activity.details}</p>
-                              )}
-                            </div>
-                            <div className="whitespace-nowrap text-right text-sm text-gray-500">
-                              {new Date(activity.date).toLocaleString()}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              {admin.blocked_at && (
+                <p className="mt-2 text-sm text-gray-500">
+                  Blocked at: {new Date(admin.blocked_at).toLocaleString()}
+                </p>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Status Update Modal */}
-        {showStatusModal && (
+        {/* Block Confirmation Modal */}
+        {showBlockModal && (
           <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">
             <div className="bg-white rounded-lg p-6 max-w-md w-full">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Update Admin Status
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Block Admin
               </h3>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  New Status
-                </label>
-                <select
-                  value={newStatus}
-                  onChange={(e) => setNewStatus(e.target.value as AdminDetail['status'])}
-                  className="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                >
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
-                </select>
-              </div>
+              <p className="text-sm text-gray-500 mb-4">
+                Are you sure you want to block this admin? They will no longer be able to access the system.
+              </p>
               <div className="flex justify-end space-x-3">
                 <button
-                  onClick={() => setShowStatusModal(false)}
+                  onClick={() => setShowBlockModal(false)}
                   className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-500"
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={handleStatusUpdate}
-                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
+                  onClick={handleBlock}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
                 >
-                  Update Status
+                  Block Admin
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Unblock Confirmation Modal */}
+        {showUnblockModal && (
+          <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Unblock Admin
+              </h3>
+              <p className="text-sm text-gray-500 mb-4">
+                Are you sure you want to unblock this admin? They will regain access to the system.
+              </p>
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowUnblockModal(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-500"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleUnblock}
+                  className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700"
+                >
+                  Unblock Admin
                 </button>
               </div>
             </div>
@@ -262,4 +342,4 @@ export default function AdminDetail() {
       </main>
     </div>
   );
-} 
+}

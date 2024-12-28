@@ -15,12 +15,18 @@ import {
   AlertCircle
 } from 'lucide-react';
 
+interface Address {
+  street_address: string;
+  postcode: string;
+  city: string;
+  state: string;
+}
+
 interface UserFormData {
   name: string;
   email: string;
-  phoneNumber: string;
-  faculty: string;
-  address: string;
+  phone: string;
+  address: Address;
 }
 
 export default function EditUser() {
@@ -32,25 +38,50 @@ export default function EditUser() {
   const [formData, setFormData] = useState<UserFormData>({
     name: '',
     email: '',
-    phoneNumber: '',
-    faculty: '',
-    address: ''
+    phone: '',
+    address: {
+      street_address: '',
+      postcode: '',
+      city: '',
+      state: ''
+    }
   });
 
   useEffect(() => {
-    // Reference to mockUserDetail from user details page
     const fetchUser = async () => {
       try {
-        // Simulate API call
-        const response = await Promise.resolve({
-          name: "John Doe",
-          email: "john@example.com",
-          phoneNumber: "012-3456789",
-          faculty: "Engineering",
-          address: "123, Jalan Universiti, 81310 Skudai, Johor"
+        const token = localStorage.getItem('admin_token');
+        if (!token) {
+          router.push('/admin/login');
+          return;
+        }
+
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/admin/users/${params.id}`,
+          {
+            headers: {
+              'Accept': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch user');
+        }
+
+        const { data } = await response.json();
+        setFormData({
+          name: data.name,
+          email: data.email,
+          phone: data.phone_no || '',
+          address: data.address || {
+            street_address: '',
+            postcode: '',
+            city: '',
+            state: ''
+          }
         });
-        
-        setFormData(response);
         setIsLoading(false);
       } catch (err) {
         setError('Failed to fetch user details');
@@ -59,7 +90,7 @@ export default function EditUser() {
     };
 
     fetchUser();
-  }, [params.id]);
+  }, [params.id, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,8 +99,29 @@ export default function EditUser() {
 
   const handleConfirmUpdate = async () => {
     try {
-      // Add your update logic here
-      console.log('Updating user with data:', formData);
+      const token = localStorage.getItem('admin_token');
+      if (!token) {
+        router.push('/admin/login');
+        return;
+      }
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/users/${params.id}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(formData)
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to update user');
+      }
+
       router.push(`/admin/users/${params.id}`);
     } catch (err) {
       setError('Failed to update user');
@@ -79,7 +131,17 @@ export default function EditUser() {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen bg-gray-50/30">
+        <AdminNavbar />
+        <AdminMenuBar />
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+          </div>
+        </main>
+      </div>
+    );
   }
 
   return (
@@ -157,45 +219,86 @@ export default function EditUser() {
                 </div>
 
                 <div>
-                  <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
                     Phone Number
                   </label>
                   <input
                     type="tel"
-                    id="phoneNumber"
-                    value={formData.phoneNumber}
-                    onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                    id="phone"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
                   />
                 </div>
 
-                <div>
-                  <label htmlFor="faculty" className="block text-sm font-medium text-gray-700">
-                    Faculty
-                  </label>
-                  <select
-                    id="faculty"
-                    value={formData.faculty}
-                    onChange={(e) => setFormData({ ...formData, faculty: e.target.value })}
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
-                  >
-                    <option value="Engineering">Engineering</option>
-                    <option value="Science">Science</option>
-                    <option value="Computing">Computing</option>
-                  </select>
-                </div>
+                <div className="space-y-4">
+                  <h3 className="text-sm font-medium text-gray-700">Address</h3>
+                  
+                  <div>
+                    <label htmlFor="street_address" className="block text-sm font-medium text-gray-700">
+                      Street Address
+                    </label>
+                    <input
+                      type="text"
+                      id="street_address"
+                      value={formData.address.street_address}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        address: { ...formData.address, street_address: e.target.value }
+                      })}
+                      className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                    />
+                  </div>
 
-                <div>
-                  <label htmlFor="address" className="block text-sm font-medium text-gray-700">
-                    Address
-                  </label>
-                  <textarea
-                    id="address"
-                    rows={3}
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
-                  />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="postcode" className="block text-sm font-medium text-gray-700">
+                        Postcode
+                      </label>
+                      <input
+                        type="text"
+                        id="postcode"
+                        value={formData.address.postcode}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          address: { ...formData.address, postcode: e.target.value }
+                        })}
+                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="city" className="block text-sm font-medium text-gray-700">
+                        City
+                      </label>
+                      <input
+                        type="text"
+                        id="city"
+                        value={formData.address.city}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          address: { ...formData.address, city: e.target.value }
+                        })}
+                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="state" className="block text-sm font-medium text-gray-700">
+                      State
+                    </label>
+                    <input
+                      type="text"
+                      id="state"
+                      value={formData.address.state}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        address: { ...formData.address, state: e.target.value }
+                      })}
+                      className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -203,48 +306,47 @@ export default function EditUser() {
             <div className="flex justify-end space-x-3">
               <Link
                 href={`/admin/users/${params.id}`}
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-500"
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
               >
                 Cancel
               </Link>
               <button
                 type="submit"
-                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700"
               >
                 Save Changes
               </button>
             </div>
           </form>
         </div>
+      </main>
 
-        {/* Confirmation Modal */}
-        {showConfirmModal && (
-          <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">
-            <div className="bg-white rounded-lg p-6 max-w-md w-full">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Confirm Update
-              </h3>
-              <p className="text-sm text-gray-500 mb-4">
-                Are you sure you want to update this user's information?
-              </p>
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={() => setShowConfirmModal(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-500"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleConfirmUpdate}
-                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
-                >
-                  Confirm Update
-                </button>
-              </div>
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              Confirm Update
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Are you sure you want to update this user's information?
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowConfirmModal(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 border border-gray-300 rounded-md"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmUpdate}
+                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md"
+              >
+                Confirm
+              </button>
             </div>
           </div>
-        )}
-      </main>
+        </div>
+      )}
     </div>
   );
-} 
+}

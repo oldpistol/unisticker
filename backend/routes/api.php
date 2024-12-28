@@ -5,9 +5,13 @@ use App\Http\Controllers\Admin\Auth\LoginController as AdminLoginController;
 use App\Http\Controllers\Admin\Auth\LogoutController as AdminLogoutController;
 use App\Http\Controllers\Admin\StickerApplication\ApproveController;
 use App\Http\Controllers\Admin\StickerApplication\DetailController;
+use App\Http\Controllers\Admin\StickerApplication\ExportController;
 use App\Http\Controllers\Admin\StickerApplication\RecentApplicationsController;
 use App\Http\Controllers\Admin\StickerApplication\RejectController;
 use App\Http\Controllers\Admin\StickerApplication\ApplicationsController;
+use App\Http\Controllers\Admin\User\ExportController as UserExportController;
+use App\Http\Controllers\Admin\User\IndexController as UserIndexController;
+use App\Http\Controllers\Admin\User\ShowController;
 use App\Http\Controllers\Auth\AuthCheckController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\GoogleController;
@@ -21,6 +25,12 @@ use App\Http\Controllers\StickerApplication\CreateController;
 use App\Http\Controllers\StickerApplication\IndexController;
 use App\Http\Controllers\StickerApplication\ShowController as ApplicationShowController;
 use App\Http\Controllers\VehicleBrandModel\IndexController as VehicleBrandModelIndexController;
+use App\Http\Controllers\Admin\User\UpdateController;
+use App\Http\Controllers\Admin\User\UpdateStatusController;
+use App\Http\Controllers\Admin\Settings\ShowController as SettingsShowController;
+use App\Http\Controllers\Admin\Settings\UpdateController as SettingsUpdateController;
+use App\Http\Controllers\Admin\Settings\TestEmailController;
+use App\Http\Controllers\Admin\Settings\TestSmsController;
 use Illuminate\Support\Facades\Route;
 
 // User Auth Routes
@@ -49,13 +59,36 @@ Route::group(['prefix' => 'admin/auth'], function () {
 });
 
 // Admin routes
-Route::prefix('admin')->middleware(['auth:admin'])->group(function () {
-    Route::get('/recent-applications', RecentApplicationsController::class);
-    Route::prefix('applications')->group(function () {
-        Route::get('/', ApplicationsController::class);
-        Route::get('/{id}', DetailController::class);
-        Route::post('/{id}/approve', ApproveController::class);
-        Route::post('/{id}/reject', RejectController::class);
+Route::middleware('auth:admin')->group(function () {
+    Route::prefix('admin')->group(function () {
+        // Admin Management
+        Route::get('admins', App\Http\Controllers\Admin\Admin\IndexController::class);
+        Route::post('admins', App\Http\Controllers\Admin\Admin\StoreController::class);
+        Route::get('admins/{admin}', App\Http\Controllers\Admin\Admin\ShowController::class);
+        Route::put('admins/{admin}', App\Http\Controllers\Admin\Admin\UpdateController::class);
+
+        Route::get('/recent-applications', RecentApplicationsController::class);
+        Route::prefix('applications')->group(function () {
+            Route::get('/', ApplicationsController::class);
+            Route::get('/export', ExportController::class);
+            Route::get('/{id}', DetailController::class);
+            Route::post('/{id}/approve', ApproveController::class);
+            Route::post('/{id}/reject', RejectController::class);
+        });
+        
+        Route::prefix('users')->group(function () {
+            Route::get('/', UserIndexController::class);
+            Route::get('/export', UserExportController::class);
+            Route::get('/{id}', ShowController::class);
+            Route::patch('/{id}', UpdateController::class);
+            Route::patch('/{id}/status', UpdateStatusController::class);
+        });
+        
+        // Settings Routes
+        Route::get('/settings', SettingsShowController::class);
+        Route::post('/settings', SettingsUpdateController::class);
+        Route::post('/settings/test-email', TestEmailController::class);
+        Route::post('/settings/test-sms', TestSmsController::class);
     });
 });
 

@@ -113,6 +113,57 @@ export default withAdminAuth(function ApplicationsList() {
     }
   };
 
+  const handleExport = async () => {
+    try {
+      const token = localStorage.getItem('admin_token');
+      
+      if (!token) {
+        router.push('/admin/login');
+        return;
+      }
+
+      const queryParams = new URLSearchParams({
+        ...(searchTerm && { search: searchTerm }),
+        ...(filters.status !== 'all' && { status: filters.status }),
+        ...(filters.vehicleType !== 'all' && { vehicle_type: filters.vehicleType }),
+        ...(filters.dateRange !== 'all' && { date_range: filters.dateRange })
+      });
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/applications/export?${queryParams}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Export failed');
+      }
+
+      // Get filename from Content-Disposition header or use default
+      const contentDisposition = response.headers.get('Content-Disposition');
+      const filename = contentDisposition
+        ? contentDisposition.split('filename=')[1].replace(/"/g, '')
+        : 'applications.csv';
+
+      // Create blob from response and download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error exporting applications:', error);
+      // You could add a toast notification here
+    }
+  };
+
   useEffect(() => {
     fetchApplications();
   }, [currentPage, searchTerm, filters]);
@@ -210,19 +261,19 @@ export default withAdminAuth(function ApplicationsList() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-semibold text-gray-900">Applications</h1>
-              <div className="mt-1 flex items-center text-sm text-gray-500">
-                <span>Total {totalItems} applications</span>
-                <span className="mx-2">•</span>
-                <span>Updated {lastUpdated}</span>
-              </div>
+              <p className="mt-1 text-sm text-gray-500">
+                Total {totalItems} applications • Updated {lastUpdated}
+              </p>
             </div>
-            <button
-              className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              onClick={() => {/* Add export logic */}}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </button>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={handleExport}
+                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </button>
+            </div>
           </div>
         </div>
 
@@ -348,13 +399,13 @@ export default withAdminAuth(function ApplicationsList() {
           <>
             <div className="bg-white shadow rounded-lg overflow-hidden">
               <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+                <thead className="bg-[#4F46E5]">
                   <tr>
                     {columns.map((column, index) => (
                       <th
                         key={index}
                         scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        className="px-6 py-3 text-left text-sm font-medium text-white uppercase tracking-wider"
                       >
                         {column.header}
                       </th>
