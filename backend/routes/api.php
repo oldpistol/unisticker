@@ -3,7 +3,11 @@
 use App\Http\Controllers\Admin\Auth\CheckController as AdminCheckController;
 use App\Http\Controllers\Admin\Auth\LoginController as AdminLoginController;
 use App\Http\Controllers\Admin\Auth\LogoutController as AdminLogoutController;
+use App\Http\Controllers\Admin\StickerApplication\ApproveController;
+use App\Http\Controllers\Admin\StickerApplication\DetailController;
 use App\Http\Controllers\Admin\StickerApplication\RecentApplicationsController;
+use App\Http\Controllers\Admin\StickerApplication\RejectController;
+use App\Http\Controllers\Admin\StickerApplication\ApplicationsController;
 use App\Http\Controllers\Auth\AuthCheckController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\GoogleController;
@@ -47,9 +51,12 @@ Route::group(['prefix' => 'admin/auth'], function () {
 // Admin routes
 Route::prefix('admin')->middleware(['auth:admin'])->group(function () {
     Route::get('/recent-applications', RecentApplicationsController::class);
-    // Route::get('/sticker-applications', IndexController::class);
-    // Route::get('/sticker-applications/{id}', ApplicationShowController::class);
-    // Route::post('/sticker-applications', CreateController::class);
+    Route::prefix('applications')->group(function () {
+        Route::get('/', ApplicationsController::class);
+        Route::get('/{id}', DetailController::class);
+        Route::post('/{id}/approve', ApproveController::class);
+        Route::post('/{id}/reject', RejectController::class);
+    });
 });
 
 // Sticker Application Routes
@@ -60,7 +67,7 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // Document routes
-Route::middleware('auth:sanctum')->get('/documents/{document}', DocumentShowController::class);
+Route::middleware('auth:sanctum')->get('/documents/{document}', DocumentShowController::class)->name('api.documents.show');
 
 // Vehicle Brand Models
 Route::get('/vehicle-brand-models', VehicleBrandModelIndexController::class);

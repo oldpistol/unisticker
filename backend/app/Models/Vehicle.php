@@ -36,7 +36,7 @@ class Vehicle extends Model
 
     public function vehicleBrandModel()
     {
-        return $this->belongsTo(VehicleBrandModel::class);
+        return $this->belongsTo(VehicleBrandModel::class, 'vehicle_brand_model_id');
     }
     
     public function stickerApplications()

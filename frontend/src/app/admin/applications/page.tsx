@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { withAdminAuth } from '@/middleware/withAdminAuth';
 import AdminNavbar from '@/components/admin/AdminNavbar';
 import AdminMenuBar from '@/components/admin/AdminMenuBar';
-import Table from '@/components/Table';
 import Pagination from '@/components/Pagination';
 import Link from 'next/link';
 import { 
@@ -16,6 +15,7 @@ import {
   Building2,
   Tag
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface Column<T> {
   header: string;
@@ -33,185 +33,155 @@ interface Application {
   faculty: string;
 }
 
-const mockApplications: Application[] = [
-  {
-    id: 1,
-    studentId: "A20EC0001",
-    studentName: "Ahmad Ismail",
-    vehicleNo: "JKD 1234",
-    submittedDate: "2024-03-15",
-    status: "Pending",
-    vehicleType: "Car",
-    faculty: "Engineering"
-  },
-  {
-    id: 2,
-    studentId: "A20SC0045",
-    studentName: "Sarah Abdullah",
-    vehicleNo: "WXC 5522",
-    submittedDate: "2024-03-14",
-    status: "Approved",
-    vehicleType: "Motorcycle",
-    faculty: "Science"
-  },
-  {
-    id: 3,
-    studentId: "A20MB0132",
-    studentName: "Muhammad Ali",
-    vehicleNo: "VBN 7788",
-    submittedDate: "2024-03-14",
-    status: "Rejected",
-    vehicleType: "Car",
-    faculty: "Management"
-  },
-  {
-    id: 4,
-    studentId: "A20CS0078",
-    studentName: "Nurul Aina",
-    vehicleNo: "JKL 3456",
-    submittedDate: "2024-03-13",
-    status: "Pending",
-    vehicleType: "Motorcycle",
-    faculty: "Computing"
-  },
-  {
-    id: 5,
-    studentId: "A20EC0089",
-    studentName: "Tan Wei Ming",
-    vehicleNo: "PHD 9012",
-    submittedDate: "2024-03-13",
-    status: "Approved",
-    vehicleType: "Car",
-    faculty: "Engineering"
-  },
-  {
-    id: 6,
-    studentId: "A20ME0023",
-    studentName: "Raj Kumar",
-    vehicleNo: "WRT 4567",
-    submittedDate: "2024-03-12",
-    status: "Pending",
-    vehicleType: "Car",
-    faculty: "Engineering"
-  },
-  {
-    id: 7,
-    studentId: "A20SC0167",
-    studentName: "Lisa Wong",
-    vehicleNo: "BNM 8899",
-    submittedDate: "2024-03-12",
-    status: "Approved",
-    vehicleType: "Motorcycle",
-    faculty: "Science"
-  },
-  {
-    id: 8,
-    studentId: "A20IS0198",
-    studentName: "Amir Hassan",
-    vehicleNo: "QWE 2468",
-    submittedDate: "2024-03-11",
-    status: "Rejected",
-    vehicleType: "Car",
-    faculty: "Islamic Studies"
-  },
-  {
-    id: 9,
-    studentId: "A20EC0234",
-    studentName: "Siti Aminah",
-    vehicleNo: "KLM 1357",
-    submittedDate: "2024-03-11",
-    status: "Pending",
-    vehicleType: "Motorcycle",
-    faculty: "Engineering"
-  },
-  {
-    id: 10,
-    studentId: "A20MB0321",
-    studentName: "Daniel Lee",
-    vehicleNo: "PLS 7890",
-    submittedDate: "2024-03-10",
-    status: "Approved",
-    vehicleType: "Car",
-    faculty: "Management"
-  }
-];
-
 export default withAdminAuth(function ApplicationsList() {
+  const [applications, setApplications] = useState<Application[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const itemsPerPage = 10;
-  const totalItems = mockApplications.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-
-  // Use the mock data in your component
-  const applications = mockApplications;
-
-  const [isLoading, setIsLoading] = useState(true);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [lastUpdated, setLastUpdated] = useState('');
+  const [filters, setFilters] = useState({
+    status: 'all',
+    vehicleType: 'all',
+    dateRange: 'all'
+  });
+  const router = useRouter();
 
-  useEffect(() => {
-    setIsLoading(false);
-  }, []);
+  // Helper function for Title Case
+  const toTitleCase = (str: string) => {
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  };
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      // Your window-dependent code here
+  const fetchApplications = async () => {
+    try {
+      setIsLoading(true);
+      const token = localStorage.getItem('admin_token');
+      
+      if (!token) {
+        router.push('/admin/login');
+        return;
+      }
+
+      const queryParams = new URLSearchParams({
+        page: currentPage.toString(),
+        per_page: '10',
+        ...(searchTerm && { search: searchTerm }),
+        ...(filters.status !== 'all' && { status: filters.status }),
+        ...(filters.vehicleType !== 'all' && { vehicle_type: filters.vehicleType }),
+        ...(filters.dateRange !== 'all' && { date_range: filters.dateRange })
+      });
+
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/admin/applications?${queryParams}`;
+      console.log('Fetching applications from:', url);
+
+      const response = await fetch(url, {
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error:', response.status, errorText);
+        throw new Error(`Failed to fetch applications: ${response.status} ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('Raw API Response:', JSON.stringify(data, null, 2));
+      console.log('Applications array:', data.data);
+      console.log('Meta information:', data.meta);
+
+      if (!Array.isArray(data.data)) {
+        console.error('API response data is not an array:', data.data);
+        throw new Error('Invalid API response format: data is not an array');
+      }
+
+      setApplications(data.data || []);
+      setTotalItems(data.meta?.total || 0);
+      setTotalPages(data.meta?.last_page || 1);
+      setLastUpdated(new Date().toLocaleString());
+    } catch (error) {
+      console.error('Error fetching applications:', error);
+      // Optionally show error to user here
+    } finally {
+      setIsLoading(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
-    // Handle time-sensitive operations here
-    setLastUpdated(new Date().toLocaleString());
-  }, []);
+    fetchApplications();
+  }, [currentPage, searchTerm, filters]);
 
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
+  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+    setCurrentPage(1);
+  };
+
+  const handleFilterChange = (name: string, value: string) => {
+    setFilters(prev => ({ ...prev, [name]: value }));
+    setCurrentPage(1);
+  };
+
+  const handleResetFilters = () => {
+    setFilters({
+      status: 'all',
+      vehicleType: 'all',
+      dateRange: 'all'
+    });
+    setSearchTerm('');
+    setCurrentPage(1);
+  };
 
   const columns: Column<Application>[] = [
-    { 
-      header: 'Student Information', 
-      accessor: (application: Application) => (
-        <div>
-          <div className="font-medium text-gray-900">{application.studentName}</div>
-          <div className="text-sm text-gray-500">{application.studentId}</div>
-          <div className="text-sm text-gray-500">{application.faculty}</div>
-        </div>
-      )
+    {
+      header: 'Student ID',
+      accessor: (row: any) => (
+        <Link 
+          href={`/admin/applications/${row.id}`}
+          className="text-indigo-600 hover:text-indigo-900"
+        >
+          {row.studentId}
+        </Link>
+      ),
     },
     {
-      header: 'Vehicle Details',
-      accessor: (application: Application) => (
-        <div>
-          <div className="font-medium text-gray-900">{application.vehicleNo}</div>
-          <div className="text-sm text-gray-500">{application.vehicleType}</div>
-        </div>
-      )
+      header: 'Student Name',
+      accessor: 'studentName',
     },
-    { 
-      header: 'Submitted Date', 
-      accessor: (application: Application) => (
-        <div className="text-sm text-gray-900">
-          {new Intl.DateTimeFormat('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-          }).format(new Date(application.submittedDate))}
-        </div>
-      )
+    {
+      header: 'Vehicle No.',
+      accessor: 'vehicleNo',
     },
-    { 
-      header: 'Status', 
-      accessor: (application: Application) => (
-        <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-          application.status === "Approved" 
-            ? "bg-green-50 text-green-700 ring-1 ring-green-600/20"
-            : application.status === "Pending"
-            ? "bg-yellow-50 text-yellow-700 ring-1 ring-yellow-600/20"
-            : "bg-red-50 text-red-700 ring-1 ring-red-600/20"
+    {
+      header: 'Vehicle Type',
+      accessor: 'vehicleType',
+    },
+    {
+      header: 'Submitted Date',
+      accessor: (row: any) => {
+        const date = new Date(row.submittedDate);
+        return date.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric'
+        });
+      }
+    },
+    {
+      header: 'Status',
+      accessor: (row: any) => (
+        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+          row.status.toLowerCase() === 'pending' ? 'bg-amber-100 text-amber-800' :
+          row.status.toLowerCase() === 'approved' ? 'bg-emerald-100 text-emerald-800' :
+          row.status.toLowerCase() === 'rejected' ? 'bg-rose-100 text-rose-800' :
+          'bg-gray-100 text-gray-800'
         }`}>
-          {application.status}
+          {toTitleCase(row.status)}
         </span>
       )
     },
@@ -241,7 +211,7 @@ export default withAdminAuth(function ApplicationsList() {
             <div>
               <h1 className="text-2xl font-semibold text-gray-900">Applications</h1>
               <div className="mt-1 flex items-center text-sm text-gray-500">
-                <span>Total 2,420 applications</span>
+                <span>Total {totalItems} applications</span>
                 <span className="mx-2">•</span>
                 <span>Updated {lastUpdated}</span>
               </div>
@@ -265,6 +235,8 @@ export default withAdminAuth(function ApplicationsList() {
               </div>
               <input
                 type="text"
+                value={searchTerm}
+                onChange={handleSearch}
                 placeholder="Search by student name, ID, or vehicle number"
                 className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
               />
@@ -296,12 +268,14 @@ export default withAdminAuth(function ApplicationsList() {
                       Status
                     </label>
                     <select 
+                      value={filters.status}
+                      onChange={(e) => handleFilterChange('status', e.target.value)}
                       className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
                     >
                       <option value="all">All Status</option>
-                      <option value="pending">Pending</option>
-                      <option value="approved">Approved</option>
-                      <option value="rejected">Rejected</option>
+                      <option value="Pending">Pending</option>
+                      <option value="Approved">Approved</option>
+                      <option value="Rejected">Rejected</option>
                     </select>
                   </div>
 
@@ -312,29 +286,13 @@ export default withAdminAuth(function ApplicationsList() {
                       Vehicle Type
                     </label>
                     <select 
+                      value={filters.vehicleType}
+                      onChange={(e) => handleFilterChange('vehicleType', e.target.value)}
                       className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
                     >
                       <option value="all">All Types</option>
-                      <option value="car">Car</option>
-                      <option value="motorcycle">Motorcycle</option>
-                    </select>
-                  </div>
-
-                  {/* Faculty Filter */}
-                  <div className="space-y-1.5">
-                    <label className="flex items-center text-sm text-gray-500 font-medium">
-                      <GraduationCap className="h-4 w-4 mr-2" />
-                      Faculty
-                    </label>
-                    <select 
-                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
-                    >
-                      <option value="all">All Faculties</option>
-                      <option value="engineering">Engineering</option>
-                      <option value="science">Science</option>
-                      <option value="computing">Computing</option>
-                      <option value="management">Management</option>
-                      <option value="islamic-studies">Islamic Studies</option>
+                      <option value="Car">Car</option>
+                      <option value="Motorcycle">Motorcycle</option>
                     </select>
                   </div>
 
@@ -345,6 +303,8 @@ export default withAdminAuth(function ApplicationsList() {
                       Date Range
                     </label>
                     <select 
+                      value={filters.dateRange}
+                      onChange={(e) => handleFilterChange('dateRange', e.target.value)}
                       className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
                     >
                       <option value="all">All Time</option>
@@ -359,13 +319,13 @@ export default withAdminAuth(function ApplicationsList() {
                 <div className="mt-6 flex justify-end space-x-3">
                   <button 
                     className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
-                    onClick={() => {/* Reset filters logic */}}
+                    onClick={handleResetFilters}
                   >
                     Reset
                   </button>
                   <button 
                     className="px-6 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                    onClick={() => {/* Apply filters logic */}}
+                    onClick={() => setIsFilterOpen(false)}
                   >
                     Apply Filters
                   </button>
@@ -376,17 +336,57 @@ export default withAdminAuth(function ApplicationsList() {
         </div>
 
         {/* Applications Table */}
-        <Table data={applications} columns={columns} />
-        
-        <div className="mt-6">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={totalItems}
-            itemsPerPage={itemsPerPage}
-            onPageChange={setCurrentPage}
-          />
-        </div>
+        {isLoading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+          </div>
+        ) : applications.length === 0 ? (
+          <div className="bg-white shadow rounded-lg p-6 text-center text-gray-500">
+            No applications found
+          </div>
+        ) : (
+          <>
+            <div className="bg-white shadow rounded-lg overflow-hidden">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    {columns.map((column, index) => (
+                      <th
+                        key={index}
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        {column.header}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {applications.map((application, index) => (
+                    <tr key={application.id || index} className="hover:bg-gray-50">
+                      {columns.map((column, colIndex) => (
+                        <td key={colIndex} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {typeof column.accessor === 'function'
+                            ? column.accessor(application)
+                            : application[column.accessor]}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="mt-6">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                itemsPerPage={10}
+                onPageChange={setCurrentPage}
+              />
+            </div>
+          </>
+        )}
       </main>
     </div>
   );
