@@ -47,6 +47,38 @@ interface ApplicationDetail {
   timeline: Array<{ status: string; date: string; comment?: string }>;
 }
 
+interface VehicleResponse {
+  plate_no: string;
+  type: string;
+  brand_model: string;
+  color: string;
+  driving_license_no?: string;
+  road_tax_expiry_date?: string;
+  insurance_name?: string;
+  insurance_number?: string;
+}
+
+interface ApplicationResponse {
+  user: {
+    name: string;
+    matric_id: string;  // This must be required
+    email: string;
+    phone_no?: string;
+  };
+  vehicle: VehicleResponse;
+  status: string;
+  documents?: Array<{
+    type: string;
+    name: string;
+    url: string;
+  }>;
+  timeline?: Array<{
+    status: string;
+    date: string;
+    comment?: string;
+  }>;
+}
+
 const getStatusColor = (status: string) => {
   switch (status.toLowerCase()) {
     case 'approved':
@@ -88,40 +120,25 @@ const ApplicationDetail = () => {
   useEffect(() => {
     const fetchApplication = async () => {
       try {
-        const response = await getApplication(Number(params.id));
-        console.log('API Response:', response);
-        
-        // Transform API response to match our interface
-        const transformedData: ApplicationDetail = {
+        const response: ApplicationResponse = await getApplication(Number(params.id));
+        setApplication({
           studentName: response.user.name,
-          studentId: response.user.id.toString(),
+          studentId: response.user.matric_id as string,
           email: response.user.email,
           phoneNumber: response.user.phone_no || '', 
           vehicleNo: response.vehicle.plate_no,
           vehicleType: response.vehicle.type,
           vehicleBrand: response.vehicle.brand_model.split(' ')[0],
           vehicleModel: response.vehicle.brand_model.split(' ').slice(1).join(' '),
-          vehicleColor: response.vehicle.color || '',
+          vehicleColor: response.vehicle.color,
           drivingLicenseNo: response.vehicle.driving_license_no || '',
           roadTaxExpiryDate: response.vehicle.road_tax_expiry_date || '',
           insuranceName: response.vehicle.insurance_name || '',
           insuranceNumber: response.vehicle.insurance_number || '',
           status: response.status,
-          documents: response.documents?.map(doc => ({
-            type: doc.type,
-            name: doc.name,
-            url: doc.url  // Use the complete URL from the backend
-          })) || [],
-          timeline: [
-            {
-              status: response.status,
-              date: response.application_date,
-              comment: response.remarks || undefined
-            }
-          ]
-        };
-        
-        setApplication(transformedData);
+          documents: response.documents || [],
+          timeline: response.timeline || []
+        });
       } catch (error) {
         console.error('Error fetching application:', error);
       } finally {
