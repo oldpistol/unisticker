@@ -1,32 +1,96 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { MessageCircle, Send, X } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 
 interface Message {
   id: number;
   text: string;
-  sender: 'user' | 'admin';
+  sender: 'user' | 'admin' | 'assistant';
   timestamp: string;
+  userId?: string;
 }
 
 export default function ChatModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
+  const [wsConnected, setWsConnected] = useState(false);
+  const ws = useRef<WebSocket | null>(null);
+  const adminId = useRef<string>(Math.random().toString(36).substring(7));
+
+  // WebSocket URL - adjust this based on your environment
+  const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://127.0.0.1:8080';
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const connectWebSocket = () => {
+      ws.current = new WebSocket(`${WS_URL}/ws/admin/${adminId.current}`);
+
+      ws.current.onopen = () => {
+        setWsConnected(true);
+        console.log('Connected to admin chat service');
+      };
+
+      ws.current.onclose = () => {
+        setWsConnected(false);
+        setTimeout(connectWebSocket, 3000);
+      };
+
+      ws.current.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        console.log('Received message:', data);
+        
+        if (data.type === 'message') {
+          // Don't add admin messages received from server to avoid duplicates
+          if (data.sender !== 'admin') {
+            const newMessage: Message = {
+              id: Date.now(),
+              text: data.content,
+              sender: data.sender,
+              timestamp: new Date(data.timestamp).toLocaleTimeString(),
+              userId: data.userId
+            };
+            setMessages(prev => [...prev, newMessage]);
+          }
+        }
+      };
+    };
+
+    connectWebSocket();
+
+    return () => {
+      if (ws.current) {
+        ws.current.close();
+      }
+    };
+  }, [isOpen]);
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!message.trim()) return;
+    if (!message.trim() || !ws.current || ws.current.readyState !== WebSocket.OPEN) return;
 
     const newMessage: Message = {
       id: Date.now(),
       text: message,
       sender: 'admin',
-      timestamp: new Date().toLocaleTimeString(),
+      timestamp: new Date().toLocaleTimeString()
     };
 
-    setMessages([...messages, newMessage]);
+    // Add message to local state immediately
+    setMessages(prev => [...prev, newMessage]);
+
+    // Send message to server
+    const messageData = {
+      type: 'message',
+      content: message,
+      sender: 'admin',
+      timestamp: new Date().toISOString()
+    };
+
+    ws.current.send(JSON.stringify(messageData));
     setMessage('');
   };
 
@@ -51,7 +115,10 @@ export default function ChatModal() {
             <div className="bg-white w-full max-w-4xl h-[800px] rounded-xl shadow-xl flex flex-col">
               {/* Header */}
               <div className="p-5 flex items-center justify-between bg-[#6366F1] text-white rounded-t-xl">
-                <h2 className="text-xl font-semibold">Admin Chat Support</h2>
+                <div>
+                  <h2 className="text-xl font-semibold">Admin Chat Support</h2>
+                  <p className="text-sm opacity-80">{wsConnected ? 'Connected' : 'Disconnected'}</p>
+                </div>
                 <button
                   onClick={() => setIsOpen(false)}
                   className="text-white hover:text-gray-200"
@@ -73,11 +140,33 @@ export default function ChatModal() {
                       className={`max-w-[80%] rounded-2xl px-6 py-3 ${
                         msg.sender === 'admin'
                           ? 'bg-[#6366F1] text-white'
+                          : msg.sender === 'assistant'
+                          ? 'bg-[#E7FFE7] text-gray-900'
                           : 'bg-gray-100 text-gray-900'
                       }`}
                     >
-                      <p className="text-base">{msg.text}</p>
-                      <span className="text-xs opacity-75 mt-1 block">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-medium text-current opacity-90">
+                          {msg.sender === 'admin' ? 'Admin' : 
+                           msg.sender === 'assistant' ? 'AI Assistant' : 
+                           'User'}
+                        </span>
+                        {msg.userId && (
+                          <span className="text-xs opacity-75 text-current">
+                            ({msg.userId})
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-base text-current prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-pre:my-1 prose-ul:my-1 prose-ol:my-1">
+                        {msg.sender === 'assistant' ? (
+                          <ReactMarkdown>
+                            {msg.text}
+                          </ReactMarkdown>
+                        ) : (
+                          <p>{msg.text}</p>
+                        )}
+                      </div>
+                      <span className="text-xs opacity-75 mt-1 block text-current">
                         {msg.timestamp}
                       </span>
                     </div>
@@ -93,13 +182,14 @@ export default function ChatModal() {
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder="Type your message..."
-                    className="flex-1 bg-gray-50 rounded-full px-6 py-3 focus:outline-none focus:ring-2 focus:ring-[#6366F1]"
+                    className="flex-1 bg-gray-50 rounded-full px-6 py-3 focus:outline-none focus:ring-2 focus:ring-[#6366F1] text-gray-900"
                   />
                   <button
                     type="submit"
-                    className="bg-[#6366F1] text-white px-8 py-3 rounded-full hover:bg-[#5558E3] flex items-center gap-2"
+                    disabled={!wsConnected}
+                    className="bg-[#6366F1] text-white px-8 py-3 rounded-full hover:bg-[#5558E3] flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Send
+                    <span>Send</span>
                     <Send className="w-4 h-4" />
                   </button>
                 </form>

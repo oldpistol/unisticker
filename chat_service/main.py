@@ -39,6 +39,31 @@ I can help you with:
 
 Ask me anything about UTM vehicle sticker application."""
 
+SYSTEM_PROMPT = """You are a dedicated support assistant for the UTM Vehicle Sticker (UniSticker) application system administrators.
+Your responses must be strictly limited to topics related to:
+1. UTM vehicle sticker application processes
+2. System troubleshooting and technical support
+3. Application status and management
+4. Vehicle registration and sticker policies
+5. Administrative procedures and guidelines
+
+Format your responses using markdown:
+- Use **bold** for emphasis
+- Use bullet points or numbered lists for steps
+- Use `code` for system terms or IDs
+- Use ### for section headers
+- Use > for important notes or warnings
+- Use tables when comparing or listing data
+
+If a question or topic is not related to the UniSticker system:
+1. Politely inform that you can only assist with UniSticker-related matters
+2. Guide the conversation back to UniSticker topics
+3. Suggest relevant UniSticker-related resources or information
+
+Remember: 
+- Never provide assistance or information about topics unrelated to the UTM vehicle sticker system
+- Always format responses in clear, well-structured markdown"""
+
 # Load and parse guide content
 
 
@@ -156,6 +181,33 @@ class ConnectionManager:
 
 
 manager = ConnectionManager()
+
+
+# Admin Connection Manager
+class AdminConnectionManager:
+    def __init__(self):
+        self.active_connections: Dict[str, WebSocket] = {}
+        self.message_history: Dict[str, list] = {}
+
+    async def connect(self, websocket: WebSocket, admin_id: str):
+        await websocket.accept()
+        self.active_connections[admin_id] = websocket
+        self.message_history[admin_id] = []
+
+    def disconnect(self, admin_id: str):
+        if admin_id in self.active_connections:
+            del self.active_connections[admin_id]
+
+    def get_messages(self, admin_id: str) -> list:
+        return self.message_history.get(admin_id, [])
+
+    def add_message(self, admin_id: str, message: Dict):
+        if admin_id not in self.message_history:
+            self.message_history[admin_id] = []
+        self.message_history[admin_id].append(message)
+
+
+admin_manager = AdminConnectionManager()
 
 
 @app.websocket("/ws/{client_id}")
@@ -338,3 +390,74 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
         print(f"Unexpected error: {str(e)}")
         if client_id in manager.active_connections:
             manager.disconnect(client_id)
+
+
+@app.websocket("/ws/admin/{admin_id}")
+async def admin_websocket_endpoint(websocket: WebSocket, admin_id: str):
+    await admin_manager.connect(websocket, admin_id)
+    try:
+        while True:
+            message = await websocket.receive_text()
+            try:
+                message_data = json.loads(message)
+                
+                # Store admin message
+                admin_manager.add_message(admin_id, {
+                    "type": "message",
+                    "content": message_data["content"],
+                    "sender": "admin",
+                    "timestamp": message_data["timestamp"]
+                })
+
+                # Broadcast admin message to all connected users
+                await manager.broadcast({
+                    "type": "message",
+                    "content": message_data["content"],
+                    "sender": "admin",
+                    "timestamp": message_data["timestamp"],
+                    "admin_id": admin_id
+                })
+
+                # Get AI assistant response with strict UniSticker context
+                messages = [
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": message_data["content"]}
+                ]
+
+                # Get response from Mistral AI
+                response = client.chat.completions.create(
+                    model="mistral-tiny",
+                    messages=messages,
+                    max_tokens=1000,
+                    temperature=0.7
+                )
+
+                # Format and store AI response
+                ai_response = {
+                    "type": "message",
+                    "content": response.choices[0].message.content,
+                    "sender": "assistant",
+                    "timestamp": datetime.now().isoformat()
+                }
+                admin_manager.add_message(admin_id, ai_response)
+
+                # Send AI response to admin
+                await websocket.send_json(ai_response)
+
+                # Broadcast AI response to users
+                await manager.broadcast({
+                    **ai_response,
+                    "admin_id": admin_id
+                })
+
+            except json.JSONDecodeError:
+                print(f"Invalid JSON message from admin {admin_id}")
+            except Exception as e:
+                print(f"Error processing admin message: {str(e)}")
+                
+    except WebSocketDisconnect:
+        admin_manager.disconnect(admin_id)
+        print(f"Admin {admin_id} disconnected")
+    except Exception as e:
+        print(f"Unexpected error in admin websocket: {str(e)}")
+        admin_manager.disconnect(admin_id)
