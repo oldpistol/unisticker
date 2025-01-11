@@ -6,7 +6,7 @@ export type Role = typeof VALID_ROLES[number];
 export interface AdminProfile {
   name: string;
   email: string;
-  phoneNumber: string;
+  phone: string;
   role: Role;
   status: string;
 }
@@ -14,7 +14,7 @@ export interface AdminProfile {
 export interface UpdateProfileData {
   name: string;
   email: string;
-  phoneNumber: string;
+  phone: string;
   role: Role;
 }
 

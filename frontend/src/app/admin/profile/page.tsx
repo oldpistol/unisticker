@@ -18,7 +18,7 @@ import { getProfile, updateProfile, updatePassword, ValidationError } from '@/se
 interface ProfileData {
   name: string;
   email: string;
-  phoneNumber: string;
+  phone: string;
   role: Role;
   status: string;
 }
@@ -80,7 +80,7 @@ export default function AdminProfile() {
       const { message } = await updateProfile({
         name: profileData.name,
         email: profileData.email,
-        phoneNumber: profileData.phoneNumber,
+        phone: profileData.phone,
         role: profileData.role,
       });
       setSuccessMessage(message);
@@ -256,8 +256,8 @@ export default function AdminProfile() {
                 </label>
                 <input
                   type="tel"
-                  value={profileData.phoneNumber}
-                  onChange={(e) => setProfileData({ ...profileData, phoneNumber: e.target.value })}
+                  value={profileData.phone}
+                  onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
                   className={`mt-1 block w-full rounded-md border ${
                     getFieldError('phoneNumber') ? 'border-red-300' : 'border-gray-300'
                   } px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm`}
@@ -274,7 +274,7 @@ export default function AdminProfile() {
                 <div className="mt-1">
                   <select
                     value={profileData.role}
-                    onChange={(e) => setProfileData({ ...profileData, role: e.target.value })}
+                    onChange={(e) => setProfileData({ ...profileData, role: e.target.value as "Super Admin" | "Admin" })}
                     className={`mt-1 block w-full rounded-md border ${
                       getFieldError('role') ? 'border-red-300' : 'border-gray-300'
                     } px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm`}
