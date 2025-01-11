@@ -17,17 +17,39 @@ export default function ChatModal() {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [wsConnected, setWsConnected] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [streamingMessage, setStreamingMessage] = useState('');
   const ws = useRef<WebSocket | null>(null);
   const adminId = useRef<string>(Math.random().toString(36).substring(7));
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // WebSocket URL - adjust this based on your environment
-  const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://127.0.0.1:8080';
+  const formatApplicationsTable = (data: any) => {
+    if (!Array.isArray(data)) return data;
+    
+    // Create table header
+    let table = '| ID | User Name | Vehicle Plate | Application Date | Status | Expiry Date | Remarks |\n';
+    table += '|:---:|:---:|:---:|:---:|:---:|:---:|:---:|\n';
+    
+    // Add rows
+    data.forEach(app => {
+      const appDate = app.application_date ? app.application_date.split('T')[0] : '-';
+      const expDate = app.expiry_date ? app.expiry_date.split('T')[0] : '-';
+      
+      table += `| ${app.id} | ${app.user_name} | ${app.vehicle_plate_no} | ${appDate} | ${app.status} | ${expDate} | ${app.remarks || '-'} |\n`;
+    });
+    
+    return table;
+  };
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   useEffect(() => {
     if (!isOpen) return;
 
     const connectWebSocket = () => {
-      ws.current = new WebSocket(`${WS_URL}/ws/admin/${adminId.current}`);
+      ws.current = new WebSocket(`${process.env.NEXT_PUBLIC_WS_URL || 'ws://127.0.0.1:8080'}/ws/admin/${adminId.current}`);
 
       ws.current.onopen = () => {
         setWsConnected(true);
@@ -46,15 +68,63 @@ export default function ChatModal() {
         if (data.type === 'message') {
           // Don't add admin messages received from server to avoid duplicates
           if (data.sender !== 'admin') {
+            let messageText = data.content || data.message; // Handle both content and message keys
+            
+            // If the message contains application data, format it as a table
+            if (Array.isArray(messageText)) {
+              messageText = formatApplicationsTable(messageText);
+            }
+            
+            // Skip empty messages
+            if (!messageText?.trim()) {
+              return;
+            }
+
             const newMessage: Message = {
-              id: Date.now(),
-              text: data.content,
-              sender: data.sender,
-              timestamp: new Date(data.timestamp).toLocaleTimeString(),
+              id: data.id || Date.now(),
+              text: messageText,
+              sender: data.client_id === 'ai' || data.client_id === 'assistant' ? 'assistant' : 'user',
+              timestamp: new Date().toLocaleTimeString(),
               userId: data.userId
+            };
+
+            setMessages(prev => {
+              // Check if message with same ID already exists
+              if (!prev.some(msg => msg.id === newMessage.id)) {
+                return [...prev, newMessage];
+              }
+              return prev;
+            });
+            
+            // Reset streaming state only if this is a non-streaming message
+            if (!data.isStreaming) {
+              setIsStreaming(false);
+              setStreamingMessage('');
+            }
+          }
+        } else if (data.type === 'stream') {
+          setIsStreaming(true);
+          const chunk = data.chunk || data.token || '';
+          if (data.isStart || !streamingMessage) {
+            setStreamingMessage(chunk);
+          } else {
+            setStreamingMessage(prev => prev + chunk);
+          }
+        } else if (data.type === 'stream_end') {
+          setIsStreaming(false);
+          const finalChunk = data.chunk || data.token || '';
+          const completeMessage = streamingMessage + finalChunk;
+          
+          if (completeMessage.trim()) {
+            const newMessage: Message = {
+              id: data.id || Date.now(),
+              text: completeMessage,
+              sender: 'assistant',
+              timestamp: new Date().toLocaleTimeString()
             };
             setMessages(prev => [...prev, newMessage]);
           }
+          setStreamingMessage('');
         }
       };
     };
@@ -67,6 +137,10 @@ export default function ChatModal() {
       }
     };
   }, [isOpen]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, streamingMessage]);
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -157,7 +231,11 @@ export default function ChatModal() {
                           </span>
                         )}
                       </div>
-                      <div className="text-base text-current prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-pre:my-1 prose-ul:my-1 prose-ol:my-1">
+                      <div className="text-base text-current prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-pre:my-1 prose-ul:my-1 prose-ol:my-1
+                        prose-table:my-2 prose-table:border-collapse prose-table:w-full
+                        prose-thead:bg-gray-100 prose-thead:text-left
+                        prose-th:p-2 prose-th:border prose-th:border-gray-300
+                        prose-td:p-2 prose-td:border prose-td:border-gray-300">
                         {msg.sender === 'assistant' ? (
                           <ReactMarkdown>
                             {msg.text}
@@ -172,6 +250,27 @@ export default function ChatModal() {
                     </div>
                   </div>
                 ))}
+                {isStreaming && (
+                  <div className="flex justify-start">
+                    <div className="max-w-[80%] rounded-2xl px-6 py-3 bg-[#E7FFE7] text-gray-900">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-medium text-current opacity-90">
+                          AI Assistant
+                        </span>
+                      </div>
+                      <div className="text-base text-current prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-pre:my-1 prose-ul:my-1 prose-ol:my-1
+                        prose-table:my-2 prose-table:border-collapse prose-table:w-full
+                        prose-thead:bg-gray-100 prose-thead:text-left
+                        prose-th:p-2 prose-th:border prose-th:border-gray-300
+                        prose-td:p-2 prose-td:border prose-td:border-gray-300">
+                        <ReactMarkdown>
+                          {streamingMessage}
+                        </ReactMarkdown>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
               </div>
 
               {/* Message Input */}
