@@ -72,6 +72,40 @@ export default function ApplicationDetail() {
   const [remarks, setRemarks] = useState('');
   const [actionType, setActionType] = useState<'approve' | 'reject' | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [viewUrl, setViewUrl] = useState('');
+
+  const DocumentViewerModal = ({ url, onClose }: { url: string; onClose: () => void }) => {
+    const isImage = url.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp)$/);
+    
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75">
+        <div className="relative">
+          <button
+            onClick={onClose}
+            className="absolute -top-10 right-0 text-white hover:text-gray-300"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          {isImage ? (
+            <img
+              src={url}
+              alt="Document Preview"
+              className="max-h-[85vh] rounded-lg"
+              style={{ maxWidth: '85vw' }}
+            />
+          ) : (
+            <iframe 
+              src={url} 
+              className="w-[85vw] h-[85vh] rounded-lg bg-white" 
+            />
+          )}
+        </div>
+      </div>
+    );
+  };
 
   useEffect(() => {
     const fetchApplicationDetail = async () => {
@@ -333,13 +367,8 @@ export default function ApplicationDetail() {
                           
                           const blob = await response.blob();
                           const url = window.URL.createObjectURL(blob);
-                          const a = document.createElement('a');
-                          a.href = url;
-                          a.download = doc.fileName;
-                          document.body.appendChild(a);
-                          a.click();
-                          a.remove();
-                          window.URL.revokeObjectURL(url);
+                          setViewUrl(url);
+                          setShowModal(true);
                         } catch (error) {
                           console.error('Error downloading document:', error);
                           toast.error(error instanceof Error ? error.message : 'Failed to download document');
@@ -439,6 +468,11 @@ export default function ApplicationDetail() {
           </div>
         </div>
       )}
+      {showModal && <DocumentViewerModal url={viewUrl} onClose={() => {
+        setShowModal(false);
+        window.URL.revokeObjectURL(viewUrl);
+        setViewUrl('');
+      }} />}
     </div>
   );
 }

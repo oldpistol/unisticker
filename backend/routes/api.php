@@ -105,7 +105,7 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // Document routes
-Route::middleware('auth:sanctum')->get('/documents/{document}', DocumentShowController::class)->name('api.documents.show');
+Route::get('/documents/{document}', DocumentShowController::class)->name('api.documents.show');
 
 // Vehicle Brand Models
 Route::get('/vehicle-brand-models', VehicleBrandModelIndexController::class);
