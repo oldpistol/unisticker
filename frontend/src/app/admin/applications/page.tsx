@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { withAdminAuth } from '@/middleware/withAdminAuth';
-import AdminNavbar from '@/components/admin/AdminNavbar';
 import AdminMenuBar from '@/components/admin/AdminMenuBar';
 import Pagination from '@/components/Pagination';
 import Link from 'next/link';
@@ -253,7 +252,6 @@ export default withAdminAuth(function ApplicationsList() {
 
   return (
     <div className="min-h-screen bg-gray-50/30">
-      <AdminNavbar />
       <AdminMenuBar />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header Section */}

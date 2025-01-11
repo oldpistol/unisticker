@@ -1,7 +1,6 @@
 'use client';
 import { withAdminAuth } from '@/middleware/withAdminAuth';
 import { useState, useEffect } from 'react';
-import AdminNavbar from '@/components/admin/AdminNavbar';
 import AdminMenuBar from '@/components/admin/AdminMenuBar';
 import { 
   Mail, 
@@ -159,9 +158,7 @@ function AdminSettings() {
 
   return (
     <div className="min-h-screen bg-gray-50/30">
-      <AdminNavbar />
       <AdminMenuBar />
-      
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header Section */}
         <div className="mb-8">
