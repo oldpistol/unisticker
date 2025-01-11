@@ -17,7 +17,7 @@ class UpdateController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:admins,email,' . $admin->id],
             'phone' => ['nullable', 'string', 'max:20'],
             'password' => ['nullable', Password::defaults()],
-            'role' => ['required', 'string', 'in:Super Admin,Admin'],
+            'role' => ['required', 'string', 'in:super-admin,Admin'],
             'status' => ['required', 'string', 'in:Active,Blocked'],
         ]);
 

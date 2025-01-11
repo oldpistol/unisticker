@@ -67,6 +67,11 @@ Route::middleware('auth:admin')->group(function () {
         Route::get('admins/{admin}', App\Http\Controllers\Admin\Admin\ShowController::class);
         Route::put('admins/{admin}', App\Http\Controllers\Admin\Admin\UpdateController::class);
 
+        // Profile Routes
+        Route::get('/profile', App\Http\Controllers\Admin\Profile\ShowController::class);
+        Route::patch('/profile', App\Http\Controllers\Admin\Profile\UpdateController::class);
+        Route::patch('/profile/password', App\Http\Controllers\Admin\Profile\UpdatePasswordController::class);
+
         Route::get('/recent-applications', RecentApplicationsController::class);
         Route::prefix('applications')->group(function () {
             Route::get('/', ApplicationsController::class);

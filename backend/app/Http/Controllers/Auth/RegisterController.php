@@ -20,7 +20,6 @@ class RegisterController extends Controller
             'phone_no' => $validated['phone_no'],
             'ic_no' => $validated['ic_no'],
             'passport_no' => $validated['passport_no'],
-            'matric_id' => $validated['matric_id'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
         ]);

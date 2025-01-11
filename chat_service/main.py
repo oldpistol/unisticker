@@ -29,10 +29,19 @@ client = OpenAI(
 )
 
 # System prompt template
-SYSTEM_PROMPT_TEMPLATE = """Hi {name}! 👋
+SYSTEM_PROMPT_TEMPLATE = """Hi {name}!
+
+I can help you with:
+- Application process
+- Documents needed
+- Payment & collection
+- Rules
+
 Ask me anything about UTM vehicle sticker application."""
 
 # Load and parse guide content
+
+
 def load_guide_content():
     try:
         with open("../docs/sticker_application_guide.md", "r", encoding='utf-8') as f:
@@ -41,11 +50,12 @@ def load_guide_content():
         print(f"Error loading guide: {e}")
         return ""
 
+
 def parse_guide_sections(content):
     sections = {}
     current_section = ""
     current_content = []
-    
+
     for line in content.split('\n'):
         if line.startswith('##'):
             if current_section:
@@ -54,15 +64,16 @@ def parse_guide_sections(content):
             current_content = []
         else:
             current_content.append(line)
-    
+
     if current_section:
         sections[current_section] = '\n'.join(current_content).strip()
-    
+
     return sections
+
 
 def find_relevant_content(query, sections):
     query = query.lower()
-    
+
     # Define topic mappings
     topic_keywords = {
         "document": ["Before You Begin", "Important Notes"],
@@ -78,35 +89,37 @@ def find_relevant_content(query, sections):
         "support": ["Need Help?"],
         "contact": ["Need Help?"]
     }
-    
+
     relevant_sections = set()
-    
+
     # Find matching sections based on keywords
     for keyword, section_names in topic_keywords.items():
         if keyword in query:
             for section in section_names:
                 if section in sections:
                     relevant_sections.add(section)
-    
+
     # If no matches found, try to find sections containing words from the query
     if not relevant_sections:
         query_words = set(query.split())
         for section_name, content in sections.items():
             if any(word in content.lower() for word in query_words):
                 relevant_sections.add(section_name)
-    
+
     # Format the response
     if relevant_sections:
         response_parts = []
         for section in relevant_sections:
             response_parts.append(f"## {section}\n{sections[section]}")
         return "\n\n".join(response_parts)
-    
+
     return ""
+
 
 # Load guide content at startup
 GUIDE_CONTENT = load_guide_content()
 GUIDE_SECTIONS = parse_guide_sections(GUIDE_CONTENT)
+
 
 class ConnectionManager:
     def __init__(self):
@@ -118,7 +131,7 @@ class ConnectionManager:
         self.active_connections[client_id] = websocket
         if user_info:
             self.user_info[client_id] = user_info
-            
+
     def get_user_info(self, client_id: str) -> Optional[dict]:
         return self.user_info.get(client_id)
 
@@ -141,7 +154,9 @@ class ConnectionManager:
             self.user_info[client_id]["messages"] = []
         self.user_info[client_id]["messages"].append(message)
 
+
 manager = ConnectionManager()
+
 
 @app.websocket("/ws/{client_id}")
 async def websocket_endpoint(websocket: WebSocket, client_id: str):
@@ -149,7 +164,7 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
         # Parse user info from query parameters with proper URL decoding
         query = urlparse(str(websocket.url)).query
         params = parse_qs(query)
-        
+
         # Enhanced user info parsing with URL decoding
         try:
             user_info_str = params.get('user_info', ['{}'])[0]
@@ -157,7 +172,7 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
             decoded_user_info = unquote(user_info_str)
             user_info = json.loads(decoded_user_info)
             print(f"[WebSocket {client_id}] Decoded user info: {user_info}")
-            
+
             # Validate required fields
             required_fields = ['name', 'role', 'matricNo', 'email']
             for field in required_fields:
@@ -165,7 +180,7 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
                     user_info[field] = 'N/A'
                 elif not user_info[field] or user_info[field].isspace():
                     user_info[field] = 'N/A'
-            
+
         except json.JSONDecodeError as e:
             print(f"[WebSocket {client_id}] Error parsing user info JSON: {e}")
             user_info = {
@@ -182,10 +197,11 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
                 'matricNo': 'N/A',
                 'email': 'N/A'
             }
-        
-        print(f"[WebSocket {client_id}] Connecting with user info: {user_info}")
+
+        print(f"[WebSocket {client_id}] Connecting with user info: {
+              user_info}")
         await manager.connect(websocket, client_id, user_info)
-        
+
         # Send initial connection success message
         await websocket.send_json({
             "type": "connection_status",
@@ -193,51 +209,58 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
             "client_id": client_id,
             "user_info": user_info
         })
-        
+
         while True:
             try:
                 data = await websocket.receive_json()
                 user_info = manager.get_user_info(client_id)
-                
+
                 if not user_info:
-                    print(f"[WebSocket {client_id}] Warning: No user info found, using defaults")
+                    print(
+                        f"[WebSocket {client_id}] Warning: No user info found, using defaults")
                     user_info = {
                         'name': 'Guest User',
                         'role': 'Guest',
                         'matricNo': 'N/A',
                         'email': 'N/A'
                     }
-                
+
                 # Get user details with fallbacks
-                user_name = user_info.get('name', '').strip() if user_info else ''
-                user_role = user_info.get('role', '').strip() if user_info else ''
-                user_matric = user_info.get('matricNo', '').strip() if user_info else ''
-                user_email = user_info.get('email', '').strip() if user_info else ''
-                
+                user_name = user_info.get(
+                    'name', '').strip() if user_info else ''
+                user_role = user_info.get(
+                    'role', '').strip() if user_info else ''
+                user_matric = user_info.get(
+                    'matricNo', '').strip() if user_info else ''
+                user_email = user_info.get(
+                    'email', '').strip() if user_info else ''
+
                 # Build additional info string
                 additional_info = ""
                 if user_matric and user_matric != 'N/A':
                     additional_info += f"Matric No: {user_matric}\n"
                 if user_email and user_email != 'N/A':
                     additional_info += f"Email: {user_email}"
-                
+
                 # Create personalized system prompt
                 system_prompt = SYSTEM_PROMPT_TEMPLATE.format(
                     name=user_name if user_name and user_name != 'Guest User' else 'there',
                     role=user_role if user_role != 'Guest' else 'Visitor',
                     additional_info=additional_info.strip()
                 )
-                
+
                 print("Using system prompt:", system_prompt)  # Debug print
-                
+
                 # First, check if there's relevant content from the guide
-                guide_content = find_relevant_content(data["message"], GUIDE_SECTIONS)
-                
+                guide_content = find_relevant_content(
+                    data["message"], GUIDE_SECTIONS)
+
                 # If guide content exists, use it as context for the AI
                 if guide_content:
                     messages = [
                         {"role": "system", "content": system_prompt},
-                        {"role": "system", "content": f"Use this information to answer the question:\n\n{guide_content}"},
+                        {"role": "system", "content": f"Use this information to answer the question:\n\n{
+                            guide_content}"},
                         {"role": "user", "content": data["message"]}
                     ]
                 else:
@@ -265,9 +288,10 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
                             })
 
                     # Add AI response to history
-                    ai_message = {"role": "assistant", "content": full_response}
+                    ai_message = {"role": "assistant",
+                                  "content": full_response}
                     manager.add_message(client_id, ai_message)
-                    
+
                     # Send the complete response
                     await websocket.send_json({
                         "type": "message",
@@ -275,14 +299,14 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
                         "message": full_response,
                         "timestamp": datetime.now().strftime("%H:%M:%S")
                     })
-                
+
                 except Exception as e:
                     error_message = f"Error processing message: {str(e)}"
                     await websocket.send_json({
                         "type": "error",
                         "message": error_message
                     })
-                
+
                 # Broadcast user message to other clients
                 await manager.broadcast(
                     {
@@ -293,7 +317,7 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
                     },
                     exclude_client=client_id
                 )
-                
+
             except WebSocketDisconnect:
                 raise  # Re-raise to be caught by outer try block
             except Exception as e:
@@ -302,7 +326,7 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
                     "type": "error",
                     "message": error_message
                 })
-                
+
     except WebSocketDisconnect:
         manager.disconnect(client_id)
         await manager.broadcast({

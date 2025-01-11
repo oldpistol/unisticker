@@ -25,12 +25,18 @@ class RegisterRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'matric_id' => ['required', 'string', 'max:255', 'unique:users'],
             'phone_no' => ['required', 'string', 'max:255', 'unique:users'],
-            'ic_no' => ['required_if:passport_no,null', 'string', 'max:255', 'unique:users', 'nullable'],
-            'passport_no' => ['required_if:ic_no,null', 'string', 'max:255', 'unique:users', 'nullable'],
-            'matric_id' => ['required', 'string', 'max:255', 'unique:users'],
+            'ic_no' => ['nullable', 'string', 'max:255', 'unique:users'],
+            'passport_no' => ['nullable', 'string', 'max:255', 'unique:users'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ];
+
+        // Add custom validation to ensure either ic_no or passport_no is provided
+        $rules['ic_no'][] = function ($attribute, $value, $fail) {
+            if (empty($value) && empty($this->input('passport_no'))) {
+                $fail('Either IC number or passport number is required.');
+            }
+        };
 
         return $rules;
     }

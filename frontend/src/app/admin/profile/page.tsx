@@ -10,14 +10,17 @@ import {
   Lock,
   Shield,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  Loader2
 } from 'lucide-react';
+import { getProfile, updateProfile, updatePassword, ValidationError } from '@/services/adminProfileService';
 
 interface ProfileData {
   name: string;
   email: string;
   phoneNumber: string;
-  role: 'Super Admin' | 'Admin' | 'Manager';
+  role: Role;
+  status: string;
 }
 
 interface PasswordChange {
@@ -26,14 +29,16 @@ interface PasswordChange {
   confirmPassword: string;
 }
 
-export default function AdminProfile() {
-  const [profileData, setProfileData] = useState<ProfileData>({
-    name: 'Admin User',
-    email: 'admin@example.com',
-    phoneNumber: '012-3456789',
-    role: 'Admin'
-  });
+interface ValidationErrors {
+  [key: string]: string[];
+}
 
+const VALID_ROLES = ['Super Admin', 'Admin'] as const;
+type Role = typeof VALID_ROLES[number];
+
+export default function AdminProfile() {
+  const [profileData, setProfileData] = useState<ProfileData | null>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [passwordData, setPasswordData] = useState<PasswordChange>({
     currentPassword: '',
     newPassword: '',
@@ -43,19 +48,51 @@ export default function AdminProfile() {
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [error, setError] = useState('');
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  const loadProfile = async () => {
+    try {
+      setIsLoadingProfile(true);
+      const profile = await getProfile();
+      setProfileData(profile);
+    } catch (err) {
+      setError('Failed to load profile');
+      setTimeout(() => setError(''), 3000);
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  };
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!profileData) return;
+    
     setIsLoading(true);
     setError('');
+    setValidationErrors({});
     
     try {
-      // Add your profile update logic here
-      console.log('Updating profile:', profileData);
-      setSuccessMessage('Profile updated successfully');
+      console.log(profileData);
+      const { message } = await updateProfile({
+        name: profileData.name,
+        email: profileData.email,
+        phoneNumber: profileData.phoneNumber,
+        role: profileData.role,
+      });
+      setSuccessMessage(message);
       setTimeout(() => setSuccessMessage(''), 3000);
-    } catch (err) {
-      setError('Failed to update profile');
+    } catch (err: any) {
+      if (err.response?.status === 422) {
+        const validationError: ValidationError = err.response.data;
+        setValidationErrors(validationError.errors);
+        setError(validationError.message);
+      } else {
+        setError(err.response?.data?.message || 'Failed to update profile');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -65,29 +102,73 @@ export default function AdminProfile() {
     e.preventDefault();
     setIsLoading(true);
     setError('');
+    setValidationErrors({});
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setError('New passwords do not match');
+      setValidationErrors({
+        password_confirmation: ['Passwords do not match']
+      });
       setIsLoading(false);
       return;
     }
 
     try {
-      // Add your password change logic here
-      console.log('Changing password:', passwordData);
-      setSuccessMessage('Password changed successfully');
+      const { message } = await updatePassword({
+        current_password: passwordData.currentPassword,
+        password: passwordData.newPassword,
+        password_confirmation: passwordData.confirmPassword
+      });
+      setSuccessMessage(message);
       setPasswordData({
         currentPassword: '',
         newPassword: '',
         confirmPassword: ''
       });
       setTimeout(() => setSuccessMessage(''), 3000);
-    } catch (err) {
-      setError('Failed to change password');
+    } catch (err: any) {
+      if (err.response?.status === 422) {
+        const validationError: ValidationError = err.response.data;
+        setValidationErrors(validationError.errors);
+        setError(validationError.message);
+      } else {
+        setError(err.response?.data?.message || 'Failed to change password');
+      }
     } finally {
       setIsLoading(false);
     }
   };
+
+  const getFieldError = (field: string): string | undefined => {
+    return validationErrors[field]?.[0];
+  };
+
+  if (isLoadingProfile) {
+    return (
+      <div className="min-h-screen bg-gray-50/30">
+        <AdminNavbar />
+        <AdminMenuBar />
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (!profileData) {
+    return (
+      <div className="min-h-screen bg-gray-50/30">
+        <AdminNavbar />
+        <AdminMenuBar />
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-red-500">Failed to load profile data</div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50/30">
@@ -143,8 +224,13 @@ export default function AdminProfile() {
                   type="text"
                   value={profileData.name}
                   onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                  className={`mt-1 block w-full rounded-md border ${
+                    getFieldError('name') ? 'border-red-300' : 'border-gray-300'
+                  } px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm`}
                 />
+                {getFieldError('name') && (
+                  <p className="mt-1 text-sm text-red-600">{getFieldError('name')}</p>
+                )}
               </div>
 
               <div>
@@ -155,8 +241,13 @@ export default function AdminProfile() {
                   type="email"
                   value={profileData.email}
                   onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                  className={`mt-1 block w-full rounded-md border ${
+                    getFieldError('email') ? 'border-red-300' : 'border-gray-300'
+                  } px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm`}
                 />
+                {getFieldError('email') && (
+                  <p className="mt-1 text-sm text-red-600">{getFieldError('email')}</p>
+                )}
               </div>
 
               <div>
@@ -167,17 +258,48 @@ export default function AdminProfile() {
                   type="tel"
                   value={profileData.phoneNumber}
                   onChange={(e) => setProfileData({ ...profileData, phoneNumber: e.target.value })}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                  className={`mt-1 block w-full rounded-md border ${
+                    getFieldError('phoneNumber') ? 'border-red-300' : 'border-gray-300'
+                  } px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm`}
                 />
+                {getFieldError('phoneNumber') && (
+                  <p className="mt-1 text-sm text-red-600">{getFieldError('phoneNumber')}</p>
+                )}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700">
                   Role
                 </label>
+                <div className="mt-1">
+                  <select
+                    value={profileData.role}
+                    onChange={(e) => setProfileData({ ...profileData, role: e.target.value })}
+                    className={`mt-1 block w-full rounded-md border ${
+                      getFieldError('role') ? 'border-red-300' : 'border-gray-300'
+                    } px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm`}
+                  >
+                    {VALID_ROLES.map((role) => (
+                      <option key={role} value={role}>
+                        {role}
+                      </option>
+                    ))}
+                  </select>
+                  {getFieldError('role') && (
+                    <p className="mt-1 text-sm text-red-600">{getFieldError('role')}</p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Status
+                </label>
                 <div className="mt-1 flex items-center">
-                  <Shield className="h-5 w-5 text-gray-400 mr-2" />
-                  <span className="text-sm text-gray-900">{profileData.role}</span>
+                  <div className={`h-2.5 w-2.5 rounded-full mr-2 ${
+                    profileData.status === 'Active' ? 'bg-green-500' : 'bg-gray-500'
+                  }`} />
+                  <span className="text-sm text-gray-900">{profileData.status}</span>
                 </div>
               </div>
             </div>
@@ -188,7 +310,14 @@ export default function AdminProfile() {
                 disabled={isLoading}
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
               >
-                {isLoading ? 'Saving...' : 'Save Changes'}
+                {isLoading ? (
+                  <div className="flex items-center">
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Saving...
+                  </div>
+                ) : (
+                  'Save Changes'
+                )}
               </button>
             </div>
           </form>
@@ -209,8 +338,13 @@ export default function AdminProfile() {
                   type="password"
                   value={passwordData.currentPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                  className={`mt-1 block w-full rounded-md border ${
+                    getFieldError('current_password') ? 'border-red-300' : 'border-gray-300'
+                  } px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm`}
                 />
+                {getFieldError('current_password') && (
+                  <p className="mt-1 text-sm text-red-600">{getFieldError('current_password')}</p>
+                )}
               </div>
 
               <div>
@@ -221,8 +355,13 @@ export default function AdminProfile() {
                   type="password"
                   value={passwordData.newPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                  className={`mt-1 block w-full rounded-md border ${
+                    getFieldError('password') ? 'border-red-300' : 'border-gray-300'
+                  } px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm`}
                 />
+                {getFieldError('password') && (
+                  <p className="mt-1 text-sm text-red-600">{getFieldError('password')}</p>
+                )}
               </div>
 
               <div>
@@ -233,8 +372,13 @@ export default function AdminProfile() {
                   type="password"
                   value={passwordData.confirmPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                  className={`mt-1 block w-full rounded-md border ${
+                    getFieldError('password_confirmation') ? 'border-red-300' : 'border-gray-300'
+                  } px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm`}
                 />
+                {getFieldError('password_confirmation') && (
+                  <p className="mt-1 text-sm text-red-600">{getFieldError('password_confirmation')}</p>
+                )}
               </div>
             </div>
 
@@ -244,7 +388,14 @@ export default function AdminProfile() {
                 disabled={isLoading}
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
               >
-                {isLoading ? 'Changing Password...' : 'Change Password'}
+                {isLoading ? (
+                  <div className="flex items-center">
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Changing Password...
+                  </div>
+                ) : (
+                  'Change Password'
+                )}
               </button>
             </div>
           </form>
@@ -252,4 +403,4 @@ export default function AdminProfile() {
       </main>
     </div>
   );
-} 
+}
