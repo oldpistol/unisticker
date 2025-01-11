@@ -25,8 +25,13 @@ export interface ApplicationData {
   documents: Array<{
     id: number;
     name: string;
+    url: string;
     type: string;
-    file_path: string;
+  }>;
+  timeline?: Array<{
+    status: string;
+    date: string;
+    comment?: string;
   }>;
   created_at: string;
   updated_at: string;

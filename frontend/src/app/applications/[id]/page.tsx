@@ -120,24 +120,36 @@ const ApplicationDetail = () => {
   useEffect(() => {
     const fetchApplication = async () => {
       try {
-        const response: ApplicationResponse = await getApplication(Number(params.id));
-        setApplication({
-          studentName: response.user.name,
-          studentId: response.user.matric_id as string,
-          email: response.user.email,
-          phoneNumber: response.user.phone_no || '', 
-          vehicleNo: response.vehicle.plate_no,
-          vehicleType: response.vehicle.type,
-          vehicleBrand: response.vehicle.brand_model.split(' ')[0],
-          vehicleModel: response.vehicle.brand_model.split(' ').slice(1).join(' '),
-          vehicleColor: response.vehicle.color,
-          drivingLicenseNo: response.vehicle.driving_license_no || '',
-          roadTaxExpiryDate: response.vehicle.road_tax_expiry_date || '',
-          insuranceName: response.vehicle.insurance_name || '',
-          insuranceNumber: response.vehicle.insurance_number || '',
+        const response = await getApplication(Number(params.id));
+        const applicationResponse: ApplicationResponse = {
+          user: {
+            name: response.user.name,
+            matric_id: response.user.matric_id || '',  
+            email: response.user.email,
+            phone_no: response.user.phone_no
+          },
+          vehicle: response.vehicle,
           status: response.status,
-          documents: response.documents || [],
-          timeline: response.timeline || []
+          documents: response.documents,
+          timeline: response.timeline
+        };
+        setApplication({
+          studentName: applicationResponse.user.name,
+          studentId: applicationResponse.user.matric_id,
+          email: applicationResponse.user.email,
+          phoneNumber: applicationResponse.user.phone_no || '', 
+          vehicleNo: applicationResponse.vehicle.plate_no,
+          vehicleType: applicationResponse.vehicle.type,
+          vehicleBrand: applicationResponse.vehicle.brand_model.split(' ')[0],
+          vehicleModel: applicationResponse.vehicle.brand_model.split(' ').slice(1).join(' '),
+          vehicleColor: applicationResponse.vehicle.color,
+          drivingLicenseNo: applicationResponse.vehicle.driving_license_no || '',
+          roadTaxExpiryDate: applicationResponse.vehicle.road_tax_expiry_date || '',
+          insuranceName: applicationResponse.vehicle.insurance_name || '',
+          insuranceNumber: applicationResponse.vehicle.insurance_number || '',
+          status: applicationResponse.status,
+          documents: applicationResponse.documents || [],
+          timeline: applicationResponse.timeline || []
         });
       } catch (error) {
         console.error('Error fetching application:', error);
